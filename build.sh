@@ -1,107 +1,52 @@
 #!/bin/bash
-# Copyright 2025 Rhett Creighton
-# Licensed under the Apache License, Version 2.0
+set -e  # Exit on any error
 
-set -e
+echo "🎰 Building Terminal Poker Platform..."
+echo "========================================="
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# Default values
-BUILD_TYPE="Release"
-BUILD_DIR="build"
-JOBS=$(nproc)
-CLEAN=false
-INSTALL=false
-TEST=false
-
-# Parse arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --debug)
-            BUILD_TYPE="Debug"
-            shift
-            ;;
-        --clean)
-            CLEAN=true
-            shift
-            ;;
-        --install)
-            INSTALL=true
-            shift
-            ;;
-        --test)
-            TEST=true
-            shift
-            ;;
-        --jobs)
-            JOBS="$2"
-            shift 2
-            ;;
-        --help)
-            echo "Usage: $0 [options]"
-            echo "Options:"
-            echo "  --debug     Build in debug mode"
-            echo "  --clean     Clean build directory first"
-            echo "  --install   Install after building"
-            echo "  --test      Run tests after building"
-            echo "  --jobs N    Number of parallel jobs (default: $(nproc))"
-            echo "  --help      Show this help"
-            exit 0
-            ;;
-        *)
-            echo -e "${RED}Unknown option: $1${NC}"
-            exit 1
-            ;;
-    esac
-done
-
-echo -e "${GREEN}=== PokerPlatform Build Script ===${NC}"
-echo "Build type: $BUILD_TYPE"
-echo "Build directory: $BUILD_DIR"
-echo "Parallel jobs: $JOBS"
-echo
-
-# Clean if requested
-if [ "$CLEAN" = true ]; then
-    echo -e "${YELLOW}Cleaning build directory...${NC}"
-    rm -rf "$BUILD_DIR"
-fi
+# Clean any existing builds
+echo "🧹 Cleaning previous builds..."
+rm -rf build/
+rm -f poker_game tournament_27_draw
 
 # Create build directory
-mkdir -p "$BUILD_DIR"
-cd "$BUILD_DIR"
+echo "📁 Creating build directory..."
+mkdir -p build
 
-# Configure
-echo -e "${YELLOW}Configuring...${NC}"
-cmake .. \
-    -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DBUILD_TESTS=ON \
-    -DBUILD_SERVER=ON \
-    -DBUILD_CLIENT=ON \
-    -DBUILD_AI=ON
-
-# Build
-echo -e "${YELLOW}Building...${NC}"
-make -j"$JOBS"
-
-# Run tests if requested
-if [ "$TEST" = true ]; then
-    echo -e "${YELLOW}Running tests...${NC}"
-    make test ARGS="-V"
+# Try CMake build first (full platform)
+echo "🔨 Attempting CMake build..."
+cd build
+if cmake .. -DCMAKE_BUILD_TYPE=Release 2>/dev/null && make -j$(nproc) 2>/dev/null; then
+    echo "✅ CMake build successful!"
+    cd ..
+    
+    # Copy executables to root for easy access
+    if [ -f build/poker_game_standalone ]; then
+        cp build/poker_game_standalone ./poker_game
+        echo "✅ Standalone game available as: ./poker_game"
+    fi
+    
+    if [ -f build/src/main/tournament_27_draw ]; then
+        cp build/src/main/tournament_27_draw ./tournament_27_draw
+        echo "✅ Tournament game available as: ./tournament_27_draw"
+    fi
+else
+    echo "⚠️  CMake build failed, falling back to simple compilation..."
+    cd ..
+    
+    # Fallback: compile standalone game directly
+    echo "🔨 Compiling standalone 2-7 Triple Draw..."
+    gcc -o poker_game standalone_27_draw.c -lm -O2
+    echo "✅ Standalone game compiled successfully!"
 fi
 
-# Install if requested
-if [ "$INSTALL" = true ]; then
-    echo -e "${YELLOW}Installing...${NC}"
-    sudo make install
+echo ""
+echo "🎯 BUILD COMPLETE!"
+echo "========================================="
+echo "Ready to play:"
+echo "  ./poker_game     - Play 2-7 Triple Draw immediately"
+if [ -f tournament_27_draw ]; then
+    echo "  ./tournament_27_draw - Full tournament with ncurses UI"
 fi
-
-echo -e "${GREEN}Build complete!${NC}"
-echo
-echo "To run the server: $BUILD_DIR/server/poker_server"
-echo "To run the client: $BUILD_DIR/client/poker_client"
+echo ""
+echo "Run: ./run.sh to start playing!"

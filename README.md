@@ -40,9 +40,14 @@ make -j$(nproc)
 ## Quick Play
 
 ```bash
-# Play 2-7 Triple Draw immediately:
-./poker_game
+# Build everything (cleans and builds from scratch):
+./build.sh
+
+# Run the game (one key to play):
+./run.sh
 ```
+
+**That's it! Two scripts - build once, then hit `./run.sh` to play anytime.**
 
 ## Architecture
 
