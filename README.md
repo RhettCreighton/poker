@@ -4,15 +4,33 @@ A comprehensive terminal-based poker platform supporting multiple variants, AI o
 
 Copyright 2025 Rhett Creighton
 
-## Current Status: Playable 2-7 Triple Draw
+## 🎮 Demo Programs
 
-The project currently features a fully playable 2-7 Triple Draw Lowball game:
+### `poker_demo_9_player_beautiful` - **The Flagship Demo**
+Our best demonstration showcasing the platform's capabilities:
+- **9-player full ring** with perfect circular table layout
+- **Smooth chip animations** - Watch chips fly to the pot with realistic arc physics
+- **Card replacement animations** - Cards visually discard and draw
+- **Professional UI** - Modern design with player boxes and betting display
+- **Transparent animation system** - Chips seamlessly blend with any background
 
 ```bash
-# Quick start - compile and play the standalone game:
-gcc -o poker_game standalone_27_draw.c -lm
-./poker_game
+./poker_demo_9_player_beautiful
 ```
+
+### `poker_demo_27_lowball` - **2-7 Triple Draw Showcase**
+A complete 6-player 2-7 Triple Draw Lowball demo featuring:
+- **Sophisticated draw animations** - Cards fly away and new ones arrive
+- **Hand evaluation display** - Real-time lowball hand strength
+- **Multiple betting rounds** - Full game flow demonstration
+
+```bash
+./poker_demo_27_lowball
+```
+
+## Current Status: Building the Platform
+
+The demos above showcase the UI and animation capabilities. The full platform with playable games is under active development.
 
 ## Features Implemented
 

@@ -22,6 +22,10 @@ tournament_27_draw
 *.dylib
 *.exe
 
+# Demo executables (but keep source files)
+poker_demo_*
+!poker_demo_*.c
+
 # Test outputs
 tests/unit/test_*
 tests/benchmarks/bench_*
