@@ -7,7 +7,7 @@ echo "========================================="
 # Clean any existing builds
 echo "🧹 Cleaning previous builds..."
 rm -rf build/
-rm -f poker_game tournament_27_draw
+rm -f poker_game tournament_27_draw poker_demo_27_lowball poker_demo_9_player_beautiful
 
 # Create build directory
 echo "📁 Creating build directory..."
@@ -34,19 +34,44 @@ else
     echo "⚠️  CMake build failed, falling back to simple compilation..."
     cd ..
     
-    # Fallback: compile standalone game directly
-    echo "🔨 Compiling standalone 2-7 Triple Draw..."
-    gcc -o poker_game standalone_27_draw.c -lm -O2
-    echo "✅ Standalone game compiled successfully!"
+    # Fallback: compile demos and games directly
+    echo "🔨 Compiling poker demos and games..."
+    
+    # Compile demos
+    if cc -o poker_demo_27_lowball poker_demo_27_lowball.c -lnotcurses-core -lnotcurses -lm 2>/dev/null; then
+        echo "✅ 2-7 Lowball demo compiled"
+    fi
+    
+    if cc -o poker_demo_9_player_beautiful poker_demo_9_player_beautiful.c -lnotcurses-core -lnotcurses -lm 2>/dev/null; then
+        echo "✅ 9-player demo compiled"
+    fi
+    
+    # Compile the main playable poker game
+    echo "🔨 Compiling playable poker game..."
+    if cc -o poker_game poker_game.c \
+       mvc/view/beautiful_view.c mvc/view/animated_view.c \
+       -I. -lnotcurses-core -lnotcurses -lm 2>/dev/null; then
+        echo "✅ 🎭 Beautiful animated poker game compiled!"
+    else
+        echo "⚠️  Failed to compile poker game"
+    fi
 fi
 
 echo ""
 echo "🎯 BUILD COMPLETE!"
 echo "========================================="
-echo "Ready to play:"
-echo "  ./poker_game     - Play 2-7 Triple Draw immediately"
+echo "Available programs:"
+if [ -f poker_demo_27_lowball ]; then
+    echo "  ./poker_demo_27_lowball - Beautiful 6-player demo"
+fi
+if [ -f poker_demo_9_player_beautiful ]; then
+    echo "  ./poker_demo_9_player_beautiful - 9-player demo with chip animations"
+fi
+if [ -f poker_game ]; then
+    echo "  ./poker_game - 🎮 PLAYABLE 2-7 Triple Draw (NEW!)"
+fi
 if [ -f tournament_27_draw ]; then
     echo "  ./tournament_27_draw - Full tournament with ncurses UI"
 fi
 echo ""
-echo "Run: ./run.sh to start playing!"
+echo "Run: ./run.sh to see the demos!"

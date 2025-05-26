@@ -4,10 +4,10 @@ cmake_minimum_required(VERSION 3.13)
 add_subdirectory(ui)
 
 add_library(poker_client STATIC
-    # Add source files here as they are created
+    src/input_handler.c
+    # Add more source files here as they are created
     # client.c
     # game_client.c
-    # input_handler.c
 )
 
 target_include_directories(poker_client PUBLIC

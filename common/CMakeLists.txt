@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.13)
 set(COMMON_SOURCES "")
 
 # Check each expected source file
-foreach(SOURCE_FILE cards.c deck.c hand_eval.c player.c game_state.c)
+foreach(SOURCE_FILE cards.c deck.c hand_eval.c player.c game_state.c game_manager.c)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/${SOURCE_FILE}")
         list(APPEND COMMON_SOURCES "src/${SOURCE_FILE}")
     else()
