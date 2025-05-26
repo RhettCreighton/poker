@@ -25,6 +25,14 @@ tournament_27_draw
 # Demo executables (but keep source files)
 poker_demo_*
 !poker_demo_*.c
+demo_card_sprites
+
+# Experiment binaries (but keep source files)
+sprite-experiments/exp[0-9][0-9]
+sprite-experiments/exp[0-9][0-9]_*
+sprite-experiments/demo_sprite_library
+!sprite-experiments/exp*.c
+!sprite-experiments/demo_sprite_library.c
 
 # Test outputs
 tests/unit/test_*

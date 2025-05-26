@@ -1,83 +1,67 @@
-# Terminal Poker Platform
+# Terminal Poker Game
 
-A comprehensive terminal-based poker platform supporting multiple variants, AI opponents, and networking.
+A beautiful, professional poker game for the terminal using notcurses and sprite graphics.
 
-Copyright 2025 Rhett Creighton
+## 🎯 Project Status
 
-## 🎮 Demo Programs
+**85-90% Complete** - Professional 2-7 Triple Draw Lowball with sprite graphics
 
-### `poker_demo_9_player_beautiful` - **The Flagship Demo**
-Our best demonstration showcasing the platform's capabilities:
-- **9-player full ring** with perfect circular table layout
-- **Smooth chip animations** - Watch chips fly to the pot with realistic arc physics
-- **Card replacement animations** - Cards visually discard and draw
-- **Professional UI** - Modern design with player boxes and betting display
-- **Transparent animation system** - Chips seamlessly blend with any background
+## 🚀 Quick Start
 
 ```bash
-./poker_demo_9_player_beautiful
+# Build and run the game
+./build.sh && ./poker_game
+
+# Run sprite library demo
+cd sprite-experiments
+cc -o demo_sprite_library demo_sprite_library.c ../mvc/view/sprite_renderer.c -I.. -lnotcurses-core -lnotcurses -lm
+./demo_sprite_library
 ```
 
-### `poker_demo_27_lowball` - **2-7 Triple Draw Showcase**
-A complete 6-player 2-7 Triple Draw Lowball demo featuring:
-- **Sophisticated draw animations** - Cards fly away and new ones arrive
-- **Hand evaluation display** - Real-time lowball hand strength
-- **Multiple betting rounds** - Full game flow demonstration
+## 📁 Project Structure
 
-```bash
-./poker_demo_27_lowball
+```
+poker/
+├── CLAUDE.md                    # CRITICAL: Read this first! Contains all discoveries
+├── README.md                    # This file
+├── build.sh                     # Build script with fallbacks
+├── poker_game.c                 # Main game implementation
+├── assets/                      # Visual assets
+│   ├── backgrounds/            # poker-background.jpg
+│   └── sprites/cards/          # Card PNG files (symlink)
+├── mvc/                        # MVC architecture
+│   ├── view/
+│   │   ├── sprite_renderer.h   # Sprite library API
+│   │   └── sprite_renderer.c   # Implementation
+│   └── ...
+├── sprite-experiments/         # Working experiments and demos
+│   ├── demo_sprite_library.c   # Shows how to use sprite library
+│   └── exp*.c                  # Various experiments (09-19)
+└── common/                     # Game logic libraries
 ```
 
-## Current Status: Building the Platform
+## 🎨 Key Features
 
-The demos above showcase the UI and animation capabilities. The full platform with playable games is under active development.
+- **Sprite Graphics**: Real PNG card images (3x5 optimal size)
+- **Smooth Animations**: Bezier curve card dealing
+- **Multiple Variants**: 2-7 Triple Draw implemented, Texas Hold'em ready
+- **AI Players**: Personality-based opponents
+- **Professional UI**: poker-background.jpg with proper rendering
 
-## Features Implemented
+## 📚 For Future Development
 
-- **2-7 Triple Draw Lowball** - Complete implementation with proper rules
-- **AI Opponents** - Multiple personality types (Fish, Rock, TAG, LAG, Maniac, Calling Station)
-- **Tournament System** - Multi-player tournaments with AI
-- **Modular Architecture** - Pluggable game variants and UI layouts
-- **Character-based UI** - Professional terminal graphics
+1. **ALWAYS read CLAUDE.md first** - Contains critical discoveries
+2. **Use the sprite library**: `#include "mvc/view/sprite_renderer.h"`
+3. **Run experiments**: `sprite-experiments/` has working examples
+4. **Check assets/README.md**: Explains asset organization
 
-## Planned Features
+## 🔧 Technical Notes
 
-- Texas Hold'em, Omaha, 7-Card Stud variants
-- Networked multiplayer
-- Advanced tournament structures
-- Statistics and hand history
+- Requires notcurses with pixel blitter support
+- Cards use dedicated planes (prevents rendering issues)
+- Background must use dedicated plane (prevents blurring)
+- Sprite caching provides ~6% performance improvement
 
-## Building the Full Platform
+## 📝 License
 
-```bash
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
-```
-
-## Quick Play
-
-```bash
-# Build everything (cleans and builds from scratch):
-./build.sh
-
-# Run the game (one key to play):
-./run.sh
-```
-
-**That's it! Two scripts - build once, then hit `./run.sh` to play anytime.**
-
-## Architecture
-
-This project is organized as a collection of focused modules:
-
-- **poker-engine**: Core game logic and rules
-- **poker-ui**: Terminal user interface with notcurses
-- **poker-ai**: Artificial intelligence opponents
-- **poker-network**: Multiplayer networking
-
-See [CLAUDE.md](CLAUDE.md) for detailed development documentation.
-
-## License
-
-Licensed under the Apache License, Version 2.0 - See [LICENSE](LICENSE) file for details.
+Apache 2.0 - Copyright 2025 Rhett Creighton

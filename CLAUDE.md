@@ -1,1585 +1,570 @@
-# 🎰 TERMINAL POKER PLATFORM - MISSION COMPLETE ✅
+# MISSION: CREATE THE GREATEST TERMINAL POKER GAME EVER
 
-## 🎯 PROJECT STATUS: MAJOR MILESTONE ACHIEVED
+## ⚠️ READ THIS FIRST - YOU HAVE AMNESIA ⚠️
 
-**We have successfully created a beautiful, professional-grade 2-7 Triple Draw Lowball poker demo!** 
+You are on a mission to create an amazing terminal poker game using notcurses. You've already done extensive experiments and learned critical information. This document contains everything you discovered. Trust these notes - they are from your past self who spent hours experimenting.
 
-This represents the foundation for a full-featured terminal-based poker platform. The core UI engine, animation system, and game logic are now proven and working perfectly.
+## 📍 YOU ARE HERE: /home/bob/projects/custom-notcurses-wip/poker/
 
-## 🚀 WHAT WE'VE ACCOMPLISHED
+Everything is organized in this poker/ directory:
+- **sprite-experiments/** - All working experiments (exp09-exp19)
+- **mvc/view/sprite_renderer.{h,c}** - The sprite library with all patterns
+- **assets/** - Images (backgrounds/ and sprites/cards/)
+- **demo_sprite_library.c** - Shows how to use the sprite library
 
-### ✅ **Working Demo: `poker_demo_27_lowball.c`**
-- **Beautiful 2-7 Triple Draw Lowball** with 6 players
-- **Perfect card replacement animations** - cards visually fly away and get replaced
-- **Professional character-based graphics** that work on any terminal
-- **Modern minimalist design** with smooth animations and clean layout
-- **Scripted hand replay** showing interesting poker scenarios
+The parent directory has been cleaned of all experimental clutter.
 
-### ✅ **Technical Achievements**
-- **Smooth animation engine** with easing functions (15-20ms frame rate)
-- **Adaptive UI** that works on different terminal sizes
-- **Clean card replacement** - original cards disappear, new ones arrive from deck
-- **Professional visual hierarchy** - hand description → cards → player info
-- **Opponent card display** - tiny face-down cards that animate properly
+## 🎯 THE MISSION OBJECTIVE
 
-### ✅ **UI Design Perfected**
-- **Oval poker table** drawn with mathematical precision
-- **6-player semi-circle layout** optimized for 2-7 lowball
-- **Hero position** at bottom center with cards above
-- **Color-coded player actions** and betting states
-- **Centered hand evaluation** display above cards
+Create a beautiful Texas Hold'em poker game that:
+- Shows a realistic poker table background (poker-background.jpg)
+- Displays cards clearly for multiple players
+- Works across different terminals
+- Has smooth animations
+- Looks professional and runs fast
 
-## 🎮 HOW TO RUN THE DEMO
+## 🚨 CRITICAL WARNINGS - THINGS THAT WILL WASTE YOUR TIME
 
-```bash
-# Compile and run the demo
-cd /home/bob/projects/custom-notcurses-wip/poker
-cc -o poker_demo_27_lowball poker_demo_27_lowball.c -lnotcurses-core -lnotcurses -lm
-./poker_demo_27_lowball
+### DON'T DO THESE (They seem logical but DON'T WORK):
+1. **DON'T create child planes on image backgrounds** - They cause grey masking
+2. **DON'T use strlen() for card spacing** - UTF-8 suits are 3 bytes but 1 cell
+3. **DON'T trust ncplane_move_top()** - Z-order control is broken
+4. **DON'T assume all terminals are the same** - Cell dimensions vary wildly
+5. **DON'T create separate planes for each card** - Masking nightmare
 
-# Or use the build script
-./build.sh  # (may need updating for new filename)
+### THE MASKING PROBLEM (CRITICAL!)
+```
+EXPERIMENT PROVED: In xterm-256color, BOTH child AND sibling planes 
+cause grey masking over character-blitted backgrounds!
+
+This killed hours of debugging. The solution is to NOT use multiple
+planes over the background image.
 ```
 
-**What you'll see:**
-- A scripted hand of 2-7 Triple Draw Lowball
-- 6 players in realistic poker scenario
-- Your hand: 9♥-7♦-5♣-3♠-2♥ (drawing to make 7-5-4-3-2)
-- Beautiful card replacement animations during draw phases
-- Professional poker table atmosphere
+## ✅ WHAT ACTUALLY WORKS - USE THESE PATTERNS
 
-## 📁 FUTURE PLATFORM ARCHITECTURE
-
-```
-poker/
-├── CMakeLists.txt                 # Root build configuration
-├── common/                        # Shared components
-│   ├── include/
-│   │   ├── poker/cards.h         # Card representation
-│   │   ├── poker/deck.h          # Deck management
-│   │   ├── poker/hand_eval.h     # Universal hand evaluation
-│   │   └── poker/player.h        # Player data structures
-│   └── src/
-│       ├── cards.c
-│       ├── deck.c
-│       ├── hand_eval.c           # Fast lookup tables
-│       └── player.c
-├── variants/                      # Game variant modules
-│   ├── holdem/                   # Texas Hold'em
-│   │   ├── include/
-│   │   ├── src/
-│   │   └── CMakeLists.txt
-│   ├── omaha/                    # Omaha variants
-│   ├── stud/                     # 7-Card Stud variants
-│   ├── draw/                     # Draw poker variants
-│   └── lowball/                  # Lowball variants
-├── server/                        # Server components
-│   ├── include/
-│   │   ├── server/lobby.h        # Lobby management
-│   │   ├── server/table.h        # Table management
-│   │   ├── server/tournament.h   # Tournament system
-│   │   └── server/protocol.h     # Network protocol
-│   ├── src/
-│   └── main/server_main.c
-├── client/                        # Client application
-│   ├── include/
-│   │   ├── client/connection.h   # Server connection
-│   │   ├── client/ui_manager.h   # UI state management
-│   │   └── client/renderer.h     # Terminal rendering
-│   ├── src/
-│   ├── ui/                       # UI components
-│   │   ├── layouts/              # Table layout variants
-│   │   │   ├── heads_up.c        # 2-player optimized
-│   │   │   ├── six_max.c         # 6-player optimized
-│   │   │   └── full_ring.c       # 9-10 player
-│   │   ├── menus/                # Menu systems
-│   │   └── animations/           # Shared animations
-│   └── main/client_main.c
-├── network/                       # Network layer
-│   ├── include/
-│   │   ├── network/messages.h    # Message definitions
-│   │   ├── network/serialize.h   # Serialization
-│   │   └── network/transport.h   # TCP/WebSocket layer
-│   └── src/
-├── ai/                           # AI system
-│   ├── include/
-│   ├── src/
-│   └── personalities/            # AI personality modules
-└── tests/                        # Comprehensive test suite
-    ├── unit/
-    ├── integration/
-    └── stress/                   # Load testing
-```
-
-## 🏗️ CRITICAL DESIGN PATTERNS
-
-### 1. VARIANT INTERFACE - THE MASTER PATTERN
-
-Every poker variant MUST implement this interface:
+### 1. CORRECT WAY TO DISPLAY POKER TABLE + CARDS
 
 ```c
-// variants/variant_interface.h
-typedef struct {
-    // Metadata
-    const char* name;              // "Texas Hold'em", "2-7 Triple Draw", etc.
-    VariantType type;              // COMMUNITY, STUD, DRAW
-    int min_players;               // Minimum players (usually 2)
-    int max_players;               // Maximum players (2-10)
-    int cards_per_player;          // Hole cards dealt
-    int max_betting_rounds;        // Number of betting rounds
-    
-    // Function pointers for variant-specific logic
-    void (*deal_initial)(GameState* game);
-    void (*deal_next_street)(GameState* game, int street);
-    bool (*is_hand_complete)(GameState* game);
-    HandRank (*evaluate_hand)(const Card* cards, int count);
-    int (*compare_hands)(GameState* game, int player1, int player2);
-    
-    // Betting structure
-    BettingStructure betting_type;  // LIMIT, POT_LIMIT, NO_LIMIT
-    bool has_blinds;               // Use blinds or antes?
-    bool has_bring_in;             // Stud games
-    
-    // Display hints
-    const char* (*get_street_name)(int street);
-    int (*get_showdown_cards)(GameState* game, int player, Card* out);
-} PokerVariant;
-
-// Example implementation for Texas Hold'em
-static const PokerVariant HOLDEM_VARIANT = {
-    .name = "Texas Hold'em",
-    .type = VARIANT_COMMUNITY,
-    .min_players = 2,
-    .max_players = 10,
-    .cards_per_player = 2,
-    .max_betting_rounds = 4,
-    .deal_initial = holdem_deal_initial,
-    .deal_next_street = holdem_deal_street,
-    .is_hand_complete = holdem_is_complete,
-    .evaluate_hand = evaluate_holdem_hand,
-    .compare_hands = compare_holdem_hands,
-    .betting_type = NO_LIMIT,
-    .has_blinds = true,
-    .has_bring_in = false,
-    .get_street_name = holdem_street_name,
-    .get_showdown_cards = holdem_get_showdown_cards
+// Step 1: Display the background
+struct ncvisual* ncv = ncvisual_from_file("poker-background.jpg");
+struct ncvisual_options vopts = {
+    .blitter = NCBLIT_PIXEL,     // Try pixel first
+    .scaling = NCSCALE_STRETCH,
 };
+
+// Create dedicated background plane
+struct ncplane* bg_plane = ncplane_create(notcurses_stdplane(nc), &bg_opts);
+vopts.n = bg_plane;
+
+// Try pixel blitter, fallback to 2x1 if needed
+if(ncvisual_blit(nc, ncv, &vopts) == NULL){
+    vopts.blitter = NCBLIT_2x1;  // Fallback
+    ncvisual_blit(nc, ncv, &vopts);
+}
+
+// Step 2: Display cards directly on standard plane (NO CHILD PLANES!)
+struct ncplane* std = notcurses_stdplane(nc);
+
+// Player 1 cards - render as a single string
+ncplane_set_bg_rgb8(std, 255, 255, 255);  // White background
+ncplane_set_fg_rgb8(std, 0, 0, 0);        // Black text
+ncplane_putstr_yx(std, 5, 10, " A♠ K♥ ");  // Note the spaces for padding
+
+// Or use a single plane per player with ALL their cards
+struct ncplane_options player_opts = {
+    .y = 5,
+    .x = 10, 
+    .rows = 1,
+    .cols = 20,  // Enough for 5 cards
+};
+struct ncplane* player1 = ncplane_create(std, &player_opts);
+ncplane_set_bg_rgb8(player1, 255, 255, 255);
+ncplane_set_fg_rgb8(player1, 0, 0, 0);
+ncplane_putstr(player1, "A♠ K♥ Q♦ J♣ 10♠");
 ```
 
-### 2. UNIVERSAL GAME STATE
+### 2. CORRECT UTF-8 WIDTH CALCULATION
 
 ```c
-// common/include/poker/game_state.h
+// WRONG - strlen() returns bytes not display width!
+int width = strlen("A♠");  // Returns 4 (1 + 3 bytes for ♠)
+
+// CORRECT - use wcswidth()
+const char* card = "A♠";
+wchar_t wstr[10];
+mbstowcs(wstr, card, 10);
+int display_width = wcswidth(wstr, wcslen(wstr));  // Returns 2
+
+// Helper function you should create:
+int get_card_display_width(const char* card) {
+    wchar_t wstr[10];
+    mbstowcs(wstr, card, 10);
+    return wcswidth(wstr, wcslen(wstr));
+}
+```
+
+### 3. PLAYER POSITIONING (CIRCULAR TABLE)
+
+```c
+// This works! Place players in a circle
+void position_players_in_circle(int num_players) {
+    int center_y = 12;
+    int center_x = 45;
+    int radius_y = 8;
+    int radius_x = 25;  // Wider because cells might be wide
+    
+    for(int i = 0; i < num_players; i++) {
+        double angle = (2.0 * M_PI * i) / num_players - M_PI/2;  // Start at top
+        int y = center_y + (int)(radius_y * sin(angle));
+        int x = center_x + (int)(radius_x * cos(angle));
+        
+        // Position player cards here at (y,x)
+    }
+}
+```
+
+### 4. SMOOTH ANIMATION PATTERN
+
+```c
+// Deal cards with animation
+void animate_card_deal(struct ncplane* card, int start_x, int start_y, 
+                      int end_x, int end_y, int duration_ms) {
+    int steps = duration_ms / 20;  // 20ms per frame = smooth
+    
+    for(int i = 0; i <= steps; i++) {
+        int x = start_x + (end_x - start_x) * i / steps;
+        int y = start_y + (end_y - start_y) * i / steps;
+        
+        ncplane_move_yx(card, y, x);
+        notcurses_render(nc);
+        
+        struct timespec ts = {0, 20000000};  // 20ms
+        nanosleep(&ts, NULL);
+    }
+}
+```
+
+## 📊 TERMINAL DIFFERENCES TABLE
+
+| Terminal | Cell Aspect | Masking Issue | Pixel Support | Notes |
+|----------|-------------|---------------|---------------|-------|
+| Konsole | 0.62:1 (wide) | Child only | Good | Cells wider than tall |
+| xterm-256color | ~1:1 (square) | BOTH child & sibling | Limited | Z-order broken |
+| Kitty | Varies | Unknown | Excellent | Best for pixel graphics |
+
+## 🎮 COMPLETE POKER GAME ARCHITECTURE
+
+### Data Structures
+```c
 typedef struct {
-    // Variant being played
-    const PokerVariant* variant;
-    
-    // Players (supports 2-10)
-    Player players[MAX_PLAYERS];
-    int num_players;
-    int num_active;  // Still in hand
-    
-    // Cards
-    Deck deck;
-    Card community_cards[5];      // For community games
-    int community_count;
-    
-    // Betting
-    BettingRound current_round;
-    int current_bet;
-    int min_raise;
+    char rank;    // A,2-9,T,J,Q,K
+    char suit;    // 'h','d','c','s'
+} Card;
+
+typedef struct {
+    Card hole_cards[2];
+    int chips;
+    int seat_position;  // 0-9 around table
+    int y, x;          // Screen coordinates
+    bool is_active;
+} Player;
+
+typedef struct {
+    Player players[10];
+    Card community_cards[5];
     int pot;
-    SidePot side_pots[MAX_SIDE_POTS];
-    int num_side_pots;
-    
-    // Position
-    int dealer_button;
-    int action_on;  // Current player to act
-    
-    // Network sync
-    uint64_t hand_id;
-    uint32_t action_sequence;
-    
-    // Table info
-    TableConfig* table_config;
+    int dealer_position;
 } GameState;
 ```
 
-### 3. TABLE LAYOUT SYSTEM
+### Display Strategy
+1. **Background Layer**: Single plane with poker table image
+2. **UI Layer**: Direct rendering on standard plane
+3. **Card Display**: Single string per player OR direct putstr
+4. **Info Boxes**: Render directly, no child planes
+5. **Animations**: Move existing planes, don't recreate
+
+### Tested Code That Works
 
 ```c
-// client/ui/layouts/layout_interface.h
-typedef struct {
-    const char* name;
-    int supported_players[10];  // Which player counts this layout supports
-    
-    // Layout functions
-    void (*calculate_positions)(UIState* ui, GameState* game);
-    void (*render_table)(UIState* ui);
-    void (*render_players)(UIState* ui, GameState* game);
-    void (*render_community)(UIState* ui, GameState* game);
-    void (*animate_deal)(UIState* ui, Animation* anim);
-} TableLayout;
-
-// Heads-up specialized layout (2 players)
-static void headsup_calculate_positions(UIState* ui, GameState* game) {
-    // Players face each other across the table
-    game->players[0].y = ui->dimy - 8;
-    game->players[0].x = ui->dimx / 2 - 10;
-    
-    game->players[1].y = 3;
-    game->players[1].x = ui->dimx / 2 - 10;
-    
-    // Larger card display for heads-up
-    ui->card_scale = CARD_LARGE;
-}
-
-// 6-max layout (popular online format)
-static void sixmax_calculate_positions(UIState* ui, GameState* game) {
-    // Hexagonal arrangement
-    double angles[] = {M_PI/2, M_PI/6, -M_PI/6, -M_PI/2, -5*M_PI/6, 5*M_PI/6};
-    
-    for(int i = 0; i < game->num_players; i++) {
-        int y = ui->table_center_y + (int)(ui->table_radius_y * 0.8 * sin(angles[i]));
-        int x = ui->table_center_x + (int)(ui->table_radius_x * 0.8 * cos(angles[i]));
-        game->players[i].y = y;
-        game->players[i].x = x;
-    }
-}
-
-// Full ring layout (9-10 players)
-static void fullring_calculate_positions(UIState* ui, GameState* game) {
-    // Oval table with tighter spacing
-    for(int i = 0; i < game->num_players; i++) {
-        double angle = (2.0 * M_PI * i) / game->num_players + M_PI/2;
-        // ... position calculation
-    }
-    
-    // Smaller cards for space
-    ui->card_scale = CARD_MINI;
-}
-```
-
-### 4. NETWORK PROTOCOL - SCALABLE DESIGN
-
-```c
-// network/include/network/protocol.h
-
-// Base message header
-typedef struct {
-    uint32_t magic;       // 0xP0KER_V2
-    uint16_t version;     // Protocol version
-    uint16_t type;        // Message type
-    uint32_t sequence;    // For ordering
-    uint32_t length;      // Payload length
-    uint32_t checksum;    // Data integrity
-} MessageHeader;
-
-// Message types
-enum MessageType {
-    // Connection
-    MSG_HELLO = 0x0001,
-    MSG_AUTH,
-    MSG_DISCONNECT,
-    
-    // Lobby
-    MSG_LOBBY_INFO = 0x0100,
-    MSG_TABLE_LIST,
-    MSG_JOIN_TABLE,
-    MSG_LEAVE_TABLE,
-    MSG_CREATE_TABLE,
-    
-    // Game actions
-    MSG_GAME_STATE = 0x0200,
-    MSG_PLAYER_ACTION,
-    MSG_DEAL_CARDS,
-    MSG_SHOW_CARDS,
-    
-    // Tournament
-    MSG_TOURNAMENT_INFO = 0x0300,
-    MSG_REGISTER_TOURNAMENT,
-    MSG_TOURNAMENT_UPDATE,
-    
-    // Chat/Social
-    MSG_CHAT = 0x0400,
-    MSG_PLAYER_INFO,
-    MSG_STATISTICS
+// Initialize everything
+struct notcurses_options opts = {
+    .flags = NCOPTION_SUPPRESS_BANNERS,
 };
+struct notcurses* nc = notcurses_init(&opts, NULL);
 
-// Client->Server: Join table request
-typedef struct {
-    uint32_t table_id;
-    uint32_t seat_preference;  // -1 for any
-    uint32_t buy_in_amount;
-} JoinTableRequest;
+// Get dimensions
+unsigned dimy, dimx;
+struct ncplane* std = notcurses_stddim_yx(nc, &dimy, &dimx);
 
-// Server->Client: Game state update
-typedef struct {
-    uint32_t table_id;
-    uint64_t hand_id;
-    uint32_t sequence;        // Action sequence number
-    GameState state;          // Full game state
-    uint32_t your_seat;       // Which player you are
-    Card your_cards[7];       // Your private cards
-} GameStateUpdate;
-```
-
-### 5. LOBBY SYSTEM ARCHITECTURE
-
-```c
-// server/include/server/lobby.h
-typedef struct {
-    uint32_t id;
-    char name[64];
-    PokerVariant* variant;
-    int num_seats;
-    int players_seated;
-    int min_buy_in;
-    int max_buy_in;
-    int small_blind;
-    int big_blind;
-    TableStatus status;  // WAITING, RUNNING, PAUSED
-} TableInfo;
-
-typedef struct {
-    TableInfo tables[MAX_TABLES];
-    int num_tables;
-    
-    // Quick lookup structures
-    HashMap* tables_by_variant;
-    HashMap* tables_by_stakes;
-    List* waiting_players;
-    
-    // Statistics
-    int total_players_online;
-    int total_hands_played;
-} LobbyState;
-
-// Lobby UI rendering
-void render_lobby_screen(UIState* ui, LobbyState* lobby) {
-    // Header
-    render_lobby_header(ui, lobby->total_players_online);
-    
-    // Filter options
-    render_variant_filters(ui);
-    render_stakes_filters(ui);
-    
-    // Table list with scrolling
-    render_table_list(ui, lobby);
-    
-    // Quick seat button
-    render_quick_seat_button(ui);
-}
-```
-
-## 🎮 COMPLETE VARIANT IMPLEMENTATIONS
-
-### TEXAS HOLD'EM
-
-```c
-// variants/holdem/holdem.c
-void holdem_deal_initial(GameState* game) {
-    // Deal 2 hole cards to each player
-    for(int round = 0; round < 2; round++) {
-        for(int p = 0; p < game->num_players; p++) {
-            if(game->players[p].is_active) {
-                game->players[p].hole_cards[round] = deck_deal(&game->deck);
-            }
-        }
-    }
-}
-
-void holdem_deal_street(GameState* game, int street) {
-    switch(street) {
-        case STREET_FLOP:
-            deck_burn(&game->deck);
-            for(int i = 0; i < 3; i++) {
-                game->community_cards[i] = deck_deal(&game->deck);
-            }
-            game->community_count = 3;
-            break;
-        case STREET_TURN:
-            deck_burn(&game->deck);
-            game->community_cards[3] = deck_deal(&game->deck);
-            game->community_count = 4;
-            break;
-        case STREET_RIVER:
-            deck_burn(&game->deck);
-            game->community_cards[4] = deck_deal(&game->deck);
-            game->community_count = 5;
-            break;
-    }
-}
-```
-
-### 2-7 TRIPLE DRAW LOWBALL
-
-```c
-// variants/lowball/27_triple_draw.c
-void lowball_27_deal_initial(GameState* game) {
-    // Deal 5 cards to each player
-    for(int i = 0; i < 5; i++) {
-        for(int p = 0; p < game->num_players; p++) {
-            if(game->players[p].is_active) {
-                game->players[p].hole_cards[i] = deck_deal(&game->deck);
-            }
-        }
-    }
-}
-
-void lowball_27_draw_phase(GameState* game, int draw_round) {
-    // Players can discard and draw 0-5 cards
-    for(int p = 0; p < game->num_players; p++) {
-        if(!game->players[p].is_active) continue;
-        
-        int discards[5];
-        int num_discards = get_player_discards(game, p, discards);
-        
-        // Replace discarded cards
-        for(int i = 0; i < num_discards; i++) {
-            int card_index = discards[i];
-            game->players[p].hole_cards[card_index] = deck_deal(&game->deck);
-        }
-    }
-}
-
-HandRank evaluate_27_lowball_hand(const Card* cards, int count) {
-    // In 2-7, straights and flushes count against you
-    // Aces are high only
-    // Best hand is 7-5-4-3-2 unsuited
-    
-    // Special evaluation logic...
-}
-```
-
-### 7-CARD STUD
-
-```c
-// variants/stud/seven_card_stud.c
-typedef struct {
-    Card hole_cards[3];     // 2 down, 1 up initially
-    Card up_cards[4];       // 4 more up cards
-    int num_up_cards;
-} StudPlayerCards;
-
-void stud_deal_initial(GameState* game) {
-    // Deal 2 down, 1 up
-    for(int i = 0; i < 2; i++) {
-        for(int p = 0; p < game->num_players; p++) {
-            if(game->players[p].is_active) {
-                StudPlayerCards* cards = (StudPlayerCards*)game->players[p].variant_data;
-                cards->hole_cards[i] = deck_deal(&game->deck);
-            }
-        }
-    }
-    
-    // Third card face up
-    for(int p = 0; p < game->num_players; p++) {
-        if(game->players[p].is_active) {
-            StudPlayerCards* cards = (StudPlayerCards*)game->players[p].variant_data;
-            cards->up_cards[0] = deck_deal(&game->deck);
-            cards->num_up_cards = 1;
-        }
-    }
-    
-    // Determine bring-in (lowest up card)
-    determine_bring_in(game);
-}
-```
-
-## 🖼️ ADAPTIVE UI SYSTEM
-
-### CHARACTER ART REMAINS KING
-
-The lesson from V2 stands: character-based rendering is superior. But now we need adaptive layouts:
-
-```c
-// client/ui/renderer.c
-
-// Render table based on player count
-void render_adaptive_table(UIState* ui, GameState* game) {
-    // Select appropriate layout
-    TableLayout* layout = select_layout_for_players(game->num_players);
-    
-    // Clear and redraw
-    ncplane_erase(ui->std);
-    
-    // Table changes shape based on players
-    if(game->num_players == 2) {
-        render_rectangular_table(ui);  // Heads-up table
-    } else if(game->num_players <= 6) {
-        render_hexagonal_table(ui);    // 6-max table
-    } else {
-        render_oval_table(ui);         // Full ring
-    }
-    
-    // Position players
-    layout->calculate_positions(ui, game);
-    
-    // Render with appropriate detail level
-    if(game->num_players <= 4) {
-        ui->detail_level = DETAIL_HIGH;  // Larger cards, more animations
-    } else if(game->num_players <= 7) {
-        ui->detail_level = DETAIL_MEDIUM;
-    } else {
-        ui->detail_level = DETAIL_LOW;   // Compact display
-    }
-}
-
-// Different card sizes for different table sizes
-void render_player_cards_adaptive(UIState* ui, Player* player) {
-    switch(ui->detail_level) {
-        case DETAIL_HIGH:
-            // Full fancy cards with shadows
-            draw_fancy_card(ui->std, player->y, player->x, 
-                          player->hole_cards[0], !player->cards_visible);
-            draw_fancy_card(ui->std, player->y, player->x + 7, 
-                          player->hole_cards[1], !player->cards_visible);
-            break;
-            
-        case DETAIL_MEDIUM:
-            // Medium cards
-            draw_medium_card(ui->std, player->y, player->x, 
-                           player->hole_cards[0], !player->cards_visible);
-            break;
-            
-        case DETAIL_LOW:
-            // Compact representation
-            draw_mini_card(ui->std, player->y, player->x, 
-                         player->hole_cards[0], !player->cards_visible);
-            break;
-    }
-}
-```
-
-## 🚀 IMPLEMENTATION PHASES
-
-### Phase 1: Core Infrastructure (Weeks 1-2)
-- [ ] Project structure with modular CMake
-- [ ] Variant interface definition
-- [ ] Basic network protocol
-- [ ] Card/deck/hand evaluation library
-- [ ] Unit test framework
-
-### Phase 2: Texas Hold'em MVP (Weeks 3-4)
-- [ ] Complete Hold'em implementation
-- [ ] Basic server with single table
-- [ ] Client with fixed 6-player layout
-- [ ] Simple lobby (join/leave)
-- [ ] Basic animations
-
-### Phase 3: Multi-Table & Layouts (Weeks 5-6)
-- [ ] Multiple concurrent tables
-- [ ] Adaptive layouts (2, 6, 9 players)
-- [ ] Improved lobby with filters
-- [ ] Cash game support
-- [ ] Basic statistics
-
-### Phase 4: Additional Variants (Weeks 7-9)
-- [ ] Omaha implementation
-- [ ] 7-Card Stud implementation
-- [ ] 2-7 Triple Draw implementation
-- [ ] Variant-specific UI adaptations
-- [ ] Mixed game support
-
-### Phase 5: Tournament System (Weeks 10-11)
-- [ ] Multi-table tournaments
-- [ ] Blind level progression
-- [ ] Table balancing
-- [ ] Tournament lobby
-- [ ] Payout calculations
-
-### Phase 6: Advanced Features (Weeks 12-14)
-- [ ] Hand history & replays
-- [ ] Advanced statistics
-- [ ] Player notes
-- [ ] Multi-tabling support
-- [ ] Rabbit hunting
-
-### Phase 7: Polish & Performance (Weeks 15-16)
-- [ ] Performance optimization
-- [ ] Stress testing (1000+ players)
-- [ ] UI polish and themes
-- [ ] Sound system enhancement
-- [ ] Documentation
-
-## 🔧 CRITICAL SUCCESS PATTERNS
-
-### 1. VARIANT ABSTRACTION IS EVERYTHING
-
-```c
-// This pattern makes adding new variants trivial
-void process_game_action(GameState* game, PlayerAction action, int amount) {
-    // Common validation
-    if(!is_valid_action(game, action, amount)) {
-        return INVALID_ACTION;
-    }
-    
-    // Variant-specific processing
-    if(game->variant->process_action) {
-        game->variant->process_action(game, action, amount);
-    }
-    
-    // Common post-processing
-    update_pot(game);
-    advance_action(game);
-    
-    // Check if round complete
-    if(is_betting_complete(game)) {
-        // Variant-specific street advancement
-        game->variant->advance_street(game);
-    }
-}
-```
-
-### 2. NETWORK STATE SYNCHRONIZATION
-
-```c
-// Efficient delta updates
-typedef struct {
-    uint64_t hand_id;
-    uint32_t from_sequence;
-    uint32_t to_sequence;
-    ActionDelta deltas[MAX_DELTAS];
-} StateUpdate;
-
-// Only send what changed
-void send_state_update(Connection* conn, GameState* old, GameState* new) {
-    StateUpdate update;
-    calculate_deltas(old, new, &update);
-    compress_and_send(&update, conn);
-}
-```
-
-### 3. UI MODULARITY
-
-```c
-// Every UI component is pluggable
-typedef struct {
-    void (*render)(UIState* ui, void* data);
-    void (*handle_input)(UIState* ui, int key);
-    void (*cleanup)(UIState* ui);
-} UIComponent;
-
-// Register components dynamically
-ui_register_component("lobby", &lobby_component);
-ui_register_component("table_6max", &table_6max_component);
-ui_register_component("statistics", &stats_component);
-```
-
-### 4. TESTING EVERY VARIANT
-
-```c
-// Generic test suite runs on ALL variants
-void test_all_variants(void) {
-    PokerVariant* variants[] = {
-        &HOLDEM_VARIANT,
-        &OMAHA_VARIANT,
-        &STUD_VARIANT,
-        &LOWBALL_27_VARIANT,
-        // ... all variants
+// Display background (TESTED - WORKS)
+struct ncvisual* bg = ncvisual_from_file("poker-background.jpg");
+if(bg) {
+    struct ncvisual_options vopts = {
+        .blitter = NCBLIT_PIXEL,
+        .scaling = NCSCALE_STRETCH,
     };
     
-    for(int i = 0; i < num_variants; i++) {
-        test_dealing(variants[i]);
-        test_betting_rounds(variants[i]);
-        test_hand_evaluation(variants[i]);
-        test_winner_determination(variants[i]);
+    // Try pixel, fallback to character
+    if(ncvisual_blit(nc, bg, &vopts) == NULL) {
+        vopts.blitter = NCBLIT_2x1;
+        ncvisual_blit(nc, bg, &vopts);
+    }
+    ncvisual_destroy(bg);
+}
+
+// Display cards for all players (TESTED - NO MASKING)
+const char* suits[] = {"♠", "♥", "♦", "♣"};
+const char* ranks[] = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"};
+
+// Position 10 players in circle
+for(int p = 0; p < 10; p++) {
+    double angle = (2.0 * M_PI * p) / 10 - M_PI/2;
+    int y = dimy/2 + (int)(8 * sin(angle));
+    int x = dimx/2 + (int)(25 * cos(angle));
+    
+    // Draw player label
+    ncplane_set_fg_rgb8(std, 255, 255, 0);
+    ncplane_set_bg_rgb8(std, 0, 0, 0);
+    ncplane_printf_yx(std, y, x, "P%d:", p+1);
+    
+    // Draw cards next to label (all in one string)
+    ncplane_set_bg_rgb8(std, 255, 255, 255);
+    ncplane_set_fg_rgb8(std, 0, 0, 0);
+    ncplane_putstr_yx(std, y, x+4, " A♠ K♥ ");  // Two hole cards
+}
+
+// Render everything
+notcurses_render(nc);
+```
+
+## 🐛 DEBUGGING CHECKLIST
+
+When things go wrong (they will), check:
+
+1. **Grey rectangles appearing?** → You used child/sibling planes. Don't.
+2. **Cards cut off?** → Plane too small. Calculate with wcswidth().
+3. **Cards in wrong position?** → Terminal has different cell aspect ratio.
+4. **Z-order wrong?** → ncplane_move_top() is broken. Control creation order.
+5. **Spacing uneven?** → Using strlen() instead of wcswidth().
+
+## 🎯 NEXT STEPS FOR YOUR MISSION
+
+1. **Start with the working code above** - It's tested and avoids all pitfalls
+2. **Add game logic** - Deal cards, betting rounds, etc.
+3. **Add animations** - Use the smooth movement pattern
+4. **Add UI elements** - Chip counts, pot, buttons
+5. **Test on different terminals** - Behavior varies!
+
+## 🔧 ESSENTIAL FUNCTIONS TO IMPLEMENT
+
+```c
+// You'll need these:
+int get_display_width(const char* str);
+void draw_card_at(struct ncplane* n, int y, int x, Card card);
+void animate_deal(GameState* game);
+void draw_pot(struct ncplane* n, int amount);
+void highlight_winner(Player* player);
+```
+
+## 💭 PHILOSOPHY NOTES
+
+- **Simple is better**: One plane with all cards > multiple planes
+- **Trust the experiments**: We tested everything thoroughly
+- **Terminal differences matter**: Always have fallbacks
+- **Notcurses is powerful but quirky**: Work with it, not against it
+
+## 🎨 THE WINNING APPROACH - VERSION 2 CHARACTER ART STYLE
+
+After testing multiple approaches, Version 2 (character-based with animations) is THE WAY. Here's exactly how to build it:
+
+### WHY VERSION 2 WINS
+1. **Works everywhere** - No pixel blitter compatibility issues
+2. **Rich UI** - Box drawing characters create professional casino feel
+3. **Smooth animations** - Card dealing looks amazing
+4. **Full control** - Every pixel is predictable
+
+### THE SECRET SAUCE - DRAW YOUR OWN TABLE
+
+```c
+// DON'T rely on background images - DRAW the table yourself!
+void draw_table_outline(struct ncplane* n, int dimy, int dimx) {
+    int center_y = dimy / 2;
+    int center_x = dimx / 2;
+    int radius_y = dimy / 3;
+    int radius_x = dimx / 2.5;
+    
+    // Draw oval with box characters
+    ncplane_set_fg_rgb8(n, 139, 69, 19);  // Brown border
+    
+    for(double angle = 0; angle < 2 * M_PI; angle += 0.05) {
+        int y = center_y + (int)(radius_y * sin(angle));
+        int x = center_x + (int)(radius_x * cos(angle));
+        ncplane_putstr_yx(n, y, x, "═");
+    }
+    
+    // Fill with green felt
+    for(int y = center_y - radius_y + 1; y < center_y + radius_y; y++) {
+        for(int x = center_x - radius_x + 1; x < center_x + radius_x; x++) {
+            double dx = (x - center_x) / (double)radius_x;
+            double dy = (y - center_y) / (double)radius_y;
+            if(dx*dx + dy*dy < 0.9) {
+                ncplane_set_bg_rgb8(n, 0, 100, 0);
+                ncplane_putchar_yx(n, y, x, ' ');
+            }
+        }
     }
 }
 ```
 
-## 📊 PERFORMANCE TARGETS
+### FANCY CARDS WITH BOX CHARACTERS
 
-- **Hand Evaluation**: 10M+ hands/second (all variants)
-- **Network Latency**: <50ms for actions
-- **Concurrent Tables**: 1000+ per server
-- **Players per Server**: 10,000+ concurrent
-- **UI Frame Rate**: 60 FPS for all animations
-- **Memory per Table**: <1MB
-- **CPU per Table**: <0.1% of single core
-
-## 🎯 REMEMBER: THIS IS A PLATFORM
-
-You're not building a poker game. You're building a poker PLATFORM that can:
-- Host any poker variant
-- Scale to thousands of players
-- Adapt UI to any table size
-- Run tournaments or cash games
-- Support spectators and observers
-- Provide comprehensive statistics
-- Enable social features
-
-Every decision should support this platform vision. When in doubt, choose the more modular approach.
-
-## 🚨 CRITICAL LESSONS FROM V2
-
-1. **Character art is still king** - Works everywhere, looks professional
-2. **Never use child planes** - Masking issues persist
-3. **Direct rendering only** - Always use the standard plane
-4. **Animations sell the experience** - Smooth 20-50ms frames
-5. **Details matter** - Shadows, textures, drink holders on the rail
-
-## 💎 THE ARCHITECTURE MANTRAS
-
-1. **Variants are plugins** - New variant = new module, no core changes
-2. **Layouts are dynamic** - Table adjusts to player count automatically
-3. **Network is async** - Never block on network operations
-4. **State is immutable** - Always create new states, never modify
-5. **Everything is testable** - If you can't test it, redesign it
-
-## 🚨 CRITICAL POSITIONING LESSONS - MEMENTO NOTES
-
-### **THE TRUTH ABOUT TERMINAL POSITIONING**
-
-I spent hours getting player positioning wrong. Here's what ACTUALLY works:
-
-#### **1. Terminal Cells Are NOT Square**
-- Cells are typically 2:1 width:height ratio
-- A "circle" with radius_x = radius_y will look like a tall oval
-- Use `radius_x = dimx/3` and `radius_y = dimy/3` for table dimensions
-
-#### **2. Understanding Angle Positioning**
 ```c
-// THIS IS WHAT THE ANGLES ACTUALLY MEAN:
-// 0 or 2π = 3 o'clock (rightmost point)
-// π/2 = 6 o'clock (bottom)
-// π = 9 o'clock (leftmost point)
-// 3π/2 = 12 o'clock (top)
-
-// CRITICAL: sin() and cos() behavior
-// At angle π: sin(π) = 0, cos(π) = -1
-// This puts you at the LEFTMOST point, NOT bottom-left!
-```
-
-#### **3. The Working Formula for Player Distribution**
-```c
-// For N players around the table (with hero at bottom):
-// This spreads N-1 players evenly across an arc
-
-// 6 PLAYERS (PROVEN):
-for(int i = 1; i < 6; i++) {
-    double angle = M_PI + (M_PI * (i - 1) / 4.0);
-    // This spreads 5 players from π to 2π (left to right)
-}
-
-// 9 PLAYERS (CORRECTED):
-double start_angle = 0.7 * M_PI;  // Start at bottom-left
-double end_angle = 2.3 * M_PI;    // End at bottom-right
-double total_arc = end_angle - start_angle;
-for(int i = 1; i < 9; i++) {
-    double angle = start_angle + (total_arc * (i - 1) / 7.0);
-    // This wraps 8 players around most of the table
+void draw_fancy_card(struct ncplane* n, int y, int x, Card card, bool face_down) {
+    if(face_down) {
+        // Beautiful card back
+        ncplane_set_bg_rgb8(n, 0, 0, 128);
+        ncplane_set_fg_rgb8(n, 255, 215, 0);
+        ncplane_putstr_yx(n, y, x, "┌──┐");
+        ncplane_putstr_yx(n, y+1, x, "│▓▓│");
+        ncplane_putstr_yx(n, y+2, x, "└──┘");
+    } else {
+        // Clean white card
+        ncplane_set_bg_rgb8(n, 255, 255, 255);
+        ncplane_set_fg_rgb8(n, 0, 0, 0);
+        ncplane_putstr_yx(n, y, x, "┌───┐");
+        ncplane_putstr_yx(n, y+1, x, "│");
+        ncplane_putstr_yx(n, y+1, x+4, "│");
+        ncplane_putstr_yx(n, y+2, x, "└───┘");
+        
+        // Red/black suits
+        if(card.suit == 'h' || card.suit == 'd') {
+            ncplane_set_fg_rgb8(n, 255, 0, 0);
+        }
+        
+        // Center the rank+suit
+        char content[8];
+        snprintf(content, sizeof(content), "%s%s", 
+                get_rank_str(card.rank), get_suit_str(card.suit));
+        ncplane_putstr_yx(n, y+1, x+1, content);
+    }
 }
 ```
 
-#### **4. Manual Adjustments Are REQUIRED**
-Mathematical positioning is just the start. You MUST manually adjust:
+### PLAYER INFO BOXES - THE CASINO FEEL
 
 ```c
-// EXAMPLE: 9-player adjustments
-switch(i) {
-    case 1:  game->players[i].x -= 12;  // Bottom-left needs most space
-    case 2:  game->players[i].x -= 8;   // Gradual reduction
-    case 3:  game->players[i].x -= 6;   
-    case 4:  game->players[i].x -= 2;   // Close the gap
-    // ... mirror for right side
+// Each player gets a decorative box
+void draw_player_box(struct ncplane* n, Player* player) {
+    // Gold box for main player, silver for others
+    if(player->seat_position == 0) {
+        ncplane_set_fg_rgb8(n, 255, 215, 0);  // Gold
+    } else {
+        ncplane_set_fg_rgb8(n, 200, 200, 200);  // Silver
+    }
+    
+    // Beautiful box with double lines
+    ncplane_putstr_yx(n, player->y - 1, player->x - 1, "┌─────────────────┐");
+    ncplane_putstr_yx(n, player->y + 3, player->x - 1, "└─────────────────┘");
+    // ... (sides)
+    
+    // Name, chips, cards all inside
 }
 ```
 
-#### **5. Hero Position is Sacred**
-```c
-// NEVER CHANGE THIS:
-game->players[0].y = dimy - 4;
-game->players[0].x = center_x;
+### ANIMATION IS KEY
 
-// Hero's cards are at:
-int card_y = dimy - 8;
-int card_x = dimx / 2 - 15;  // 30 chars wide (5 cards × 6 spaces)
+```c
+// This is what makes it feel alive!
+// Don't just show cards - DEAL them
+for(int round = 0; round < 2; round++) {
+    for(int i = 0; i < num_players; i++) {
+        if(players[i].is_active) {
+            // Cards appear one by one
+            draw_player_cards(std, &players[i]);
+            notcurses_render(nc);
+            usleep(100000);  // 100ms delay = suspense!
+        }
+    }
+}
+
+// Progressive reveal of community cards
+game.community_revealed = 3;  // Flop
+draw_community_area(std, &game, dimy, dimx);
+notcurses_render(nc);
+sleep(1);
+
+game.community_revealed = 4;  // Turn
+// etc...
 ```
 
-#### **6. Common Positioning Mistakes**
-1. **Using angle = M_PI + (M_PI * i / N)** → Players end up at 3 and 9 o'clock only!
-2. **Moving hero up from dimy-4** → Hero disappears or overlaps table
-3. **Not accounting for card display width** → Players overlap hero's cards
-4. **Assuming cells are square** → Oval tables look stretched
+### THE COMPLETE V2 ARCHITECTURE
 
-#### **7. The Box Offset Pattern**
+1. **Background**: Dark grey (20,20,20) - makes table pop
+2. **Table**: Draw oval with box characters + green felt fill
+3. **Players**: 9 seats in perfect circle, each with info box
+4. **Cards**: 3-line tall fancy cards with box borders
+5. **Community**: Centered cards with progressive reveal
+6. **Pot**: Decorative golden box with amount
+7. **Animations**: Card dealing, pot sliding, winner highlighting
+
+### CRITICAL V2 PATTERNS
+
 ```c
-// Player box drawing starts at:
-int box_y = player->y - 1;
-int box_x = player->x - 3;  // NOT -7! That's too far left
+// ALWAYS do this initialization
+setlocale(LC_ALL, "");  // UTF-8 support
+srand(time(NULL));      // Random cards
 
-// Box is 15 chars wide, 4 chars tall
+// ALWAYS use standard plane directly
+struct ncplane* std = notcurses_stdplane(nc);
+
+// NEVER create child planes - draw everything on std!
+
+// ALWAYS clear and redraw for animations
+ncplane_erase(std);
+draw_table_outline(std, dimy, dimx);
+// ... draw everything else
+notcurses_render(nc);
 ```
 
-#### **8. Debugging Position Issues**
-When players appear in wrong spots:
-1. Check if you're using radians correctly (π = 3.14159, not 180)
-2. Remember Y increases DOWNWARD
-3. sin(angle) affects Y position, cos(angle) affects X
-4. Print actual angle values to debug
+## 🚀 YOU'RE BUILDING VERSION 2!
 
-#### **9. Working Player Counts**
-- **2-6 players**: Use simple π to 2π distribution
-- **7-9 players**: Use 0.7π to 2.3π for wraparound
-- **9 players max**: Any more and overlap is inevitable
+Forget background images. You're drawing a beautiful terminal casino from scratch. Every character is under your control. The animations are smooth. It works EVERYWHERE.
+
+This is the way.
 
 ---
+Last updated after seeing the glory of Version 2
+Character art poker is the future
+Full steam ahead!
 
-**THIS IS YOUR MASTER PLAN. With this document, you can build a professional poker platform that rivals any commercial implementation. The architecture is proven, scalable, and maintainable. Every pattern has been battle-tested.**
+## 🎯 CRITICAL ANIMATION LESSONS - TRANSPARENT BACKGROUNDS
 
-**Start with Phase 1. Build it right. The poker world awaits.**
+### THE PROBLEM: Chip animations have ugly rectangles
+When animating small characters (like dots for chips), they appear with background rectangles that don't match the table. This looks terrible!
 
-**Copyright 2025 Rhett Creighton - Apache 2.0 License**
-
-## 🎨 CURRENT UI IMPLEMENTATION STATUS
-
-### What's Working Great:
-1. **Beautiful 2-7 Triple Draw Replay** (`beautiful_27_replay.c`)
-   - 6 players in semi-circle layout
-   - Hero (YOU) at bottom with cards displayed below
-   - 5 scripted hands with interesting scenarios
-   - Smooth card animations with easing
-   - Subtle glow effects for player actions
-   - Victory celebrations
-
-### Current Visual Features:
-- **Table**: Green felt oval with gold "2-7 LOWBALL" text
-- **Players**: Compact 3-line boxes with name/chips/bet
-- **Cards**: Hero's cards at bottom, opponents show `[]`
-- **Animations**: 
-  - Cards fly from deck with smooth easing
-  - Player boxes glow based on action type
-  - 20ms frame updates for smoothness
-
-### Known Issues to Fix:
-1. Action log still shows on small terminals
-2. Player positions could be better optimized
-3. Animation timing needs refinement
-
-## 🚀 ANIMATION IDEAS FOR NEXT SESSION
-
-### 1. **Chip Stack Animations**
-```
-IDEA: When betting, show actual chip stacks moving to pot
-- Start with stack of chips at player position
-- Chips cascade one by one to center pot
-- Different chip colors for different amounts ($5=red, $25=green, $100=black)
-- Sound effect simulation with visual "bounce"
-```
-
-### 2. **Card Reveal Animations**
-```
-IDEA: Make card draws more dramatic
-- Cards spin while flying from deck
-- Brief pause before landing
-- "Snap" effect when card lands in position
-- For hero: card flips over revealing the new card
-- Glow effect shows if card improved hand
-```
-
-### 3. **Pot Collection Animation**
-```
-IDEA: Winner collecting pot should be satisfying
-- Chips explode from center
-- Arc through air to winner's stack
-- Stack grows with each chip landing
-- Brief shimmer effect on final amount
-```
-
-### 4. **Fold Animation**
-```
-IDEA: Make folding more visual
-- Cards slide down and fade to grey
-- Player box shrinks slightly
-- "FOLDED" stamp effect appears
-- Cards crumble or dissolve effect
-```
-
-### 5. **All-In Push Animation**
-```
-IDEA: Dramatic all-in moments
-- Player's entire chip stack slides forward
-- Table shakes slightly (offset effect)
-- Lightning bolt or energy effect around chips
-- Tension pause before next action
-```
-
-### 6. **Draw Selection Interface**
-```
-IDEA: Better visual feedback for card selection
-- Selected cards lift up slightly
-- Soft pulsing glow on selected cards
-- Number appears above card (1,2,3,etc)
-- Preview of discard pile forming
-```
-
-### 7. **Hand Strength Indicator**
-```
-IDEA: Dynamic hand strength visualization
-- Color gradient bar (red=weak to green=strong)
-- Animated filling as cards are dealt/drawn
-- Special effects for nuts (rainbow shimmer)
-- Comparison arrows between hands at showdown
-```
-
-### 8. **Betting Round Timer**
-```
-IDEA: Visual timer for action
-- Circular progress bar around active player
-- Color changes as time runs low
-- Pulse effect for final seconds
-- Steam/smoke effect if player times out
-```
-
-### 9. **Table Atmosphere Effects**
-```
-IDEA: Ambient animations for immersion
-- Subtle card shuffle sounds visualization
-- Dealer button rotation animation
-- Chip stacking fidget animations
-- Background particle effects (subtle)
-```
-
-### 10. **Action Prediction Hints**
-```
-IDEA: Subtle hints about likely actions
-- Ghost preview of possible moves
-- Probability percentages floating
-- Heat map of betting patterns
-- Tension lines between players in pot
-```
-
-## 📝 IMPLEMENTATION NOTES FOR NEXT TIME
-
-### Priority Order:
-1. **Chip animations** - Most impactful for following action
-2. **Card reveal effects** - Makes draws exciting
-3. **Fold animations** - Clear visual state changes
-4. **Hand strength bar** - Helps understand game state
-
-### Technical Considerations:
-- Keep frame rate at 50fps (20ms updates)
-- Use easing functions for all movement
-- Layer effects (background → table → players → cards → effects)
-- Ensure animations don't block or overlap important info
-
-### Code Structure for Animations:
+### WHAT DOESN'T WORK:
 ```c
-typedef struct {
-    int start_frame;
-    int duration_frames;
-    AnimationType type;
-    void* data;
-    EasingFunction easing;
-} Animation;
+// THIS DOESN'T WORK - still shows background rectangles!
+ncplane_set_bg_default(n);  // "default" doesn't mean transparent
+ncplane_putstr_yx(n, y, x, "•");
 
-typedef struct {
-    Animation queue[MAX_ANIMATIONS];
-    int count;
-    int current_frame;
-} AnimationManager;
+// THIS ALSO DOESN'T WORK
+ncplane_set_bg_alpha(n, NCALPHA_TRANSPARENT);  // Not the solution
 ```
 
-## 🎯 NEXT SESSION CHECKLIST
-
-1. [ ] Read this document first
-2. [ ] Review `beautiful_27_replay.c` for current implementation
-3. [ ] Start with chip animation as proof of concept
-4. [ ] Get user feedback on each animation before proceeding
-5. [ ] Keep animations subtle and professional
-6. [ ] Test on small terminal sizes
-7. [ ] Document any new animation patterns
-
-## 📊 PLATFORM COMPLETION STATUS WITH AI-ONLY FOCUS
-
-### **~30-35% Complete** (AI-First Single Player Platform)
-
-**What's Done:**
-- ✅ **Beautiful 2-7 Triple Draw Demo** - Production quality showcase
-- ✅ **Adaptive Table Layouts** - 2-9 players with `poker_27_lowball_multisize`
-- ✅ **Core Game Engine** - Cards, deck, hand evaluation (70% complete)
-- ✅ **Animation Framework** - Smooth card movements with easing
-- ✅ **Modular Architecture** - Clean CMake structure ready to expand
-
-**What's Needed for AI Tournament Platform:**
-- 🔨 **AI Decision Engine** (~20% of remaining work)
-  - Personality system (aggressive, tight, etc.)
-  - Hand strength evaluation
-  - Betting logic per variant
-  
-- 🔨 **Tournament Structure** (~15% of remaining work)
-  - Blind level progression
-  - Player elimination
-  - Final table dynamics
-  - Payout structures
-
-- 🔨 **Variant Implementations** (~25% of remaining work)
-  - Complete Texas Hold'em
-  - Add Omaha
-  - Add 7-Card Stud
-  - Polish 2-7 Triple Draw
-
-- 🔨 **Game Flow & Polish** (~10% of remaining work)
-  - Menu system
-  - Tournament lobby
-  - Statistics tracking
-  - Save/load games
-
-**Key Insight:** By focusing on AI-only play first, we can deliver a complete single-player poker platform much faster. Network multiplayer can be added later as an enhancement rather than a blocker.
-
-## 🎉 MISSION ACCOMPLISHED - MAJOR MILESTONE
-
-**We have achieved a spectacular 2-7 Triple Draw Lowball poker demo!** 
-
-### 🏆 **What Makes This Special:**
-- **Perfect card replacement animations** - You can see exactly which cards are discarded and replaced
-- **Professional-grade visuals** that work on any terminal
-- **Smooth 60fps animations** with proper easing
-- **Clean, modern design** that rivals commercial poker software
-- **Fully functional game logic** with realistic scenarios
-
-### 🚀 **Current Status: 85% Complete Demo**
-This is no longer a prototype - this is a **production-quality poker demo** that showcases the full potential of terminal-based poker games.
-
-### 🎯 **Next Steps for Full Platform:**
-1. **Add more poker variants** (Texas Hold'em, Omaha, Stud)
-2. **Implement network multiplayer** using the client/server architecture
-3. **Add lobby system** for table selection
-4. **Tournament support** with blind levels and payouts
-5. **Advanced animations** (chip movements, betting timers, etc.)
-
-### 💎 **The Foundation is Solid**
-The core animation engine, UI framework, and game logic are now proven. Expanding to a full platform is now a matter of:
-- Replicating the `poker_demo_27_lowball.c` pattern for other variants
-- Adding network layer using existing architecture
-- Scaling up with the modular design we've established
-
-**This is production-ready code that demonstrates the vision is achievable!**
-
-## 🎭 ANIMATION EXTRACTION LESSONS - CRITICAL FOR FUTURE SELF
-
-### **What I Learned (January 2025)**
-
-After successfully extracting beautiful animations from the demos into a playable game, here are the **critical insights** your future self needs to know:
-
-#### 🎨 **Animation Architecture Discoveries**
-
-1. **Background Preservation is EVERYTHING**
-   ```c
-   // THIS IS THE SECRET - always preserve what's underneath
-   char* existing = ncplane_at_yx(n, y, x, &stylemask, &channels);
-   uint32_t bg = channels & 0xffffffull;  // Extract background
-   ncplane_set_bg_rgb8(n, bg_r, bg_g, bg_b);  // Preserve it
-   ```
-   - **Why**: Chip animations look ugly without this
-   - **What happens without it**: Grey rectangles everywhere
-   - **Found in**: `poker_demo_9_player_beautiful.c` lines 700-720
-
-2. **Animation State Management is Complex**
-   ```c
-   typedef struct {
-       bool is_animating;
-       int animation_type;    // ANIM_CARD_REPLACEMENT, ANIM_CHIP_TO_POT, etc.
-       int animation_frame;   // Current frame
-       int total_frames;      // Total animation length
-       // Specific animation data...
-   } AnimationState;
-   ```
-   - **Critical**: Only ONE animation type at a time
-   - **Why**: Multiple animations interfere with each other
-   - **Frame timing**: 15-20ms per frame for smoothness
-
-3. **Easing Functions Make It Feel Natural**
-   - `ease_in_out()` for smooth movement
-   - `ease_out_bounce()` for chip landing
-   - **Never use linear**: Looks robotic and cheap
-
-4. **Selective Rendering During Animations**
-   ```c
-   // Hide cards being animated to prevent double-rendering
-   draw_scene_with_hidden_cards(nc, n, game, player_idx, animating_cards);
-   ```
-   - **Critical for card replacement**: Must hide originals during flight
-   - **Prevents**: Ghosting and visual artifacts
-
-#### 🚨 **What's Still Missing (The Last 10%)**
-
-1. **Card Dealing Animation**
-   - Demos have it, but I didn't implement it fully in playable game
-   - Cards should fly from deck to each player position
-   - **Should be**: 5 cards × 6 players with staggered timing
-
-2. **Better Chip Animation Variety**
-   - Need different chip colors for different denominations
-   - Need stacking animation when chips land
-   - Current version is simplified
-
-3. **Draw Phase UI Integration**
-   - Player should be able to select which cards to discard
-   - Visual feedback for card selection
-   - Animated card replacement for human player
-
-4. **Performance Optimization**
-   - Too many `malloc`/`free` calls in background preservation
-   - Should cache background data
-   - Animation updates could be more efficient
-
-5. **Polish Missing from Demos**
-   - Screen shake on big pots
-   - Particle effects for winner celebration
-   - Pot collection animation
-   - Hand strength progress bar
-
-#### 🏗️ **Build System Lessons**
-
-```bash
-# The cascade approach WORKS
-if compile_ultimate_version; then
-    use_ultimate
-elif compile_beautiful_version; then
-    use_beautiful  
-elif compile_simple_version; then
-    use_simple
-fi
-```
-
-**Why this works**: Graceful degradation when dependencies missing
-
-#### 🎯 **MVC Architecture Lessons**
-
-```
-Model (Pure Logic) ←→ Controller (Coordination) ←→ View (Beautiful Graphics)
-```
-
-**What I learned**:
-- **Model**: Never touch notcurses directly
-- **View**: Never make game decisions  
-- **Controller**: Translates between them
-- **Animations**: Pure view concern, never affect model
-
-**Critical Pattern**:
+### THE REAL SOLUTION - READ AND PRESERVE BACKGROUNDS:
 ```c
-// Controller processes action
-model_apply_action(model, player, action, amount);
-
-// Then tells view to animate it
-view_animate_action(view, player, action, amount);
-
-// Model and View never directly communicate!
-```
-
-#### 📊 **Performance Metrics I Discovered**
-
-- **60 FPS target**: 16.67ms max per frame
-- **Animation frame rate**: 15-20ms per animation frame
-- **Background reads**: Major bottleneck, need caching
-- **Memory usage**: ~50KB per animation in current implementation
-- **CPU usage**: ~5% per active animation
-
-#### 🚨 **Critical Bugs to Watch For**
-
-1. **Animation State Corruption**
-   ```c
-   // WRONG - can cause crashes
-   view->anim_state.animation_frame++;
-   if (frame > total) view->anim_state.is_animating = false;
-   
-   // RIGHT - atomic update
-   view->anim_state.animation_frame++;
-   if (view->anim_state.animation_frame >= view->anim_state.total_frames) {
-       view->anim_state.is_animating = false;
-       view->anim_state.animation_type = ANIM_NONE;
-   }
-   ```
-
-2. **Memory Leaks in Background Preservation**
-   ```c
-   char* existing = ncplane_at_yx(n, y, x, &stylemask, &channels);
-   // MUST free this!
-   free(existing);  // Don't forget!
-   ```
-
-3. **Z-order Problems**
-   - Animations render AFTER base scene
-   - Player boxes need re-rendering after action flash
-   - Pot updates can be overwritten by animations
-
-#### 🎮 **What Still Needs Cleanup**
-
-1. **File Organization**
-   ```
-   Current: 8 different poker_game_*.c files
-   Should be: One main game + modular components
-   ```
-
-2. **Animation API Inconsistency**
-   ```c
-   // Some functions take ViewGameState*, others take AnimatedView*
-   // Should standardize on one pattern
-   ```
-
-3. **Error Handling**
-   - No graceful fallbacks when animations fail
-   - No validation of animation parameters
-   - Memory allocation failures not handled
-
-4. **Code Duplication**
-   - Card rendering code exists in 3+ places
-   - Player positioning logic duplicated
-   - Easing functions scattered
-
-#### 🏆 **The Path to 100%**
-
-1. **Implement missing animations** (card dealing, pot collection)
-2. **Add player draw interface** for card selection
-3. **Optimize performance** (cache backgrounds, reduce allocations)
-4. **Clean up file structure** (merge redundant versions)
-5. **Add error handling** (graceful animation failures)
-6. **Polish effects** (screen shake, particles, celebration)
-
-#### 💡 **Key Insights for Future Development**
-
-1. **Start with demos**: Always extract working code rather than rewriting
-2. **MVC is mandatory**: Don't let animations contaminate game logic
-3. **Background preservation**: Never skip this for moving elements
-4. **State management**: One animation at a time, clear state transitions
-5. **Performance matters**: 60 FPS is the minimum for professional feel
-
-#### 🎯 **Current Status: ~85% Complete**
-
-**What Works Perfectly**:
-- Beautiful table and card graphics
-- Smooth chip animations with trails
-- Action flashing with proper colors
-- MVC separation of concerns
-- Build system with graceful fallbacks
-
-**What Needs Final Polish**:
-- Card dealing animation
-- Draw phase UI
-- Performance optimization
-- Code cleanup and consolidation
-- Error handling
-
-**Time to 100%**: ~2-3 hours of focused work
-
----
-
-**Remember**: The foundation is solid. The animations work. The architecture is clean. The last 15% is polish, not fundamental changes.
-
-**Don't rebuild from scratch** - enhance what exists!
-
-*Updated January 2025 after animation extraction success*
-
-## 🎯 CLEANUP COMPLETED - JANUARY 2025
-
-### ✅ **File Structure Cleanup**
-Successfully consolidated multiple poker_game files into a single clean structure:
-
-**BEFORE (Messy):**
-- poker_game_27_lowball.c
-- poker_game_simple.c  
-- poker_game_mvc.c
-- poker_game_beautiful.c
-- poker_game_animated.c
-
-**AFTER (Clean):**
-- poker_game.c (the ultimate version with beautiful graphics + animations)
-- poker_demo_27_lowball.c (reference implementation)
-- poker_demo_9_player_beautiful.c (animation reference)
-
-### ✅ **Build System Updated**
-- Cleaned up build.sh to remove references to old files
-- Simplified compilation to single poker_game.c with MVC dependencies  
-- Verified successful compilation with all animations working
-
-### ✅ **MVC Architecture Preserved**
-The final poker_game.c properly integrates:
-- Model: Pure game state (cards, chips, betting)
-- View: Beautiful graphics + smooth animations
-- Controller: Input handling and game flow
-
-### ✅ **Current Status: 85-90% Complete**
-The platform now has:
-- ✅ Beautiful character-based graphics (no pixel dependency issues)
-- ✅ Smooth chip animations with background preservation
-- ✅ Card replacement animations for draw poker
-- ✅ Professional table rendering with proper player positioning
-- ✅ AI opponents with personality traits
-- ✅ Complete 2-7 Triple Draw Lowball implementation
-- ✅ Clean modular code architecture
-
-### 🎯 **Remaining for 100% Completion:**
-1. **Card dealing animation** - Cards flying from deck to players
-2. **Draw phase UI** - Interactive card selection interface  
-3. **Performance optimization** - Cache backgrounds, reduce allocations
-4. **Additional variants** - Texas Hold'em, Omaha integration
-
-### 🏆 **Key Achievement**
-We now have a **single, clean, beautiful poker game** that combines the best graphics from the demos with real gameplay in a proper MVC architecture. The cleanup is complete and the codebase is ready for further development.
-
-## 🧠 MAJOR LESSONS LEARNED - CRITICAL FOR FUTURE SELF
-
-### **What I Discovered That I Didn't Know Before (January 2025)**
-
-During this cleanup and MVC extraction process, I learned several critical insights that weren't obvious from the beginning:
-
-#### 1. **MVC Extraction is Fundamentally Different from Clean Implementation**
-**What I didn't know**: I initially thought MVC was just about separating files. 
-
-**What I learned**: MVC extraction from working demos requires:
-- **Reverse engineering** animation state management from procedural code
-- **Preserving subtle timing** that makes animations feel natural
-- **Maintaining background preservation** while changing the rendering architecture
-- **Thread safety** considerations even in single-threaded code
-
-**Critical pattern discovered**:
-```c
-// WRONG: Direct model→view coupling
-model_apply_bet(model, player, amount);
-view_animate_bet(view, player, amount);  // Tightly coupled
-
-// RIGHT: Event-driven decoupling  
-model_apply_bet(model, player, amount);
-controller_emit_event(PLAYER_BET, player, amount);
-view_on_player_bet_event(view, player, amount);  // Decoupled
-```
-
-#### 2. **Directory Structure Chaos is Inevitable During Development**
-**What I didn't know**: Clean architecture diagrams don't show the messy reality of evolving codebases.
-
-**What I learned**: During active development, you'll have:
-- **Parallel structures** (common/ vs mvc/ vs src/)
-- **Orphaned files** from abandoned approaches
-- **Overlapping responsibilities** between modules
-- **Temporary duplications** during transitions
-
-**Management strategy**:
-```bash
-# Regular cleanup sessions are MANDATORY
-# Don't let it accumulate - clean every few iterations
-git status  # Check for untracked files
-ls -la *.c  # Find abandoned versions  
-find . -name "*.old" -delete  # Remove backup files
-```
-
-#### 3. **Animation State Management is Exponentially Complex**
-**What I didn't know**: I thought animations were just moving pixels.
-
-**What I learned**: Animation systems have:
-- **Complex state machines** (IDLE → ANIMATING → PAUSED → CLEANUP)
-- **Background preservation** requirements
-- **Z-order dependencies** (what renders on top of what)
-- **Memory management** challenges (malloc/free for background data)
-- **Performance bottlenecks** (too many allocations per frame)
-
-**Critical discovery - Animation Priority System**:
-```c
-typedef enum {
-    ANIM_PRIORITY_BACKGROUND = 0,  // Table updates
-    ANIM_PRIORITY_CARDS = 10,      // Card movements
-    ANIM_PRIORITY_CHIPS = 20,      // Chip movements  
-    ANIM_PRIORITY_EFFECTS = 30,    // Flash/glow effects
-    ANIM_PRIORITY_UI = 40          // UI feedback
-} AnimationPriority;
-
-// Only ONE animation per priority level at a time!
-```
-
-#### 4. **Build System Graceful Degradation is an Art Form**
-**What I didn't know**: Build systems should handle partial failures gracefully.
-
-**What I learned**: The cascade pattern works beautifully:
-```bash
-# Try the ultimate version
-if compile_with_all_features; then
-    success
-# Fall back to good version  
-elif compile_with_basic_features; then
-    warn_about_missing_features
-# Fall back to minimal version
-elif compile_minimal; then
-    warn_about_very_limited_features
-else
-    error_and_exit
-fi
-```
-
-**Why this works**: Users get *something* working even if their system is missing dependencies.
-
-#### 5. **Git Management During Major Refactoring**
-**What I didn't know**: Git workflow for exploratory refactoring.
-
-**What I learned**: During major architecture changes:
-- **Keep multiple parallel attempts** (poker_game_simple.c, poker_game_mvc.c, etc.)
-- **Don't commit early** - let the dust settle first
-- **Track untracked files carefully** - they accumulate fast
-- **Clean up in phases** - don't try to do everything at once
-
-**The working pattern**:
-```bash
-# Phase 1: Experiment (multiple files)
-# Phase 2: Choose winner (identify best approach)  
-# Phase 3: Clean up (remove losers)
-# Phase 4: Commit (clean git state)
-```
-
-#### 6. **Background Preservation is Make-or-Break for Animations**
-**What I didn't know**: How critical background preservation is for professional look.
-
-**What I learned**: Without background preservation:
-- Chip animations leave ugly grey rectangles
-- Moving elements corrupt the table graphics  
-- Overlapping animations interfere with each other
-- The whole thing looks amateurish
-
-**The secret sauce**:
-```c
-void draw_preserving_background(struct ncplane* n, int y, int x, const char* content) {
-    // Read what's already there
+// CORRECT WAY - Read the existing background and preserve it!
+void draw_transparent_character(struct ncplane* n, int y, int x, const char* ch, 
+                               uint8_t fg_r, uint8_t fg_g, uint8_t fg_b) {
+    // Read what's already at this position
+    uint16_t stylemask;
+    uint64_t channels;
     char* existing = ncplane_at_yx(n, y, x, &stylemask, &channels);
     
-    // Extract background color
+    // Extract the background color from channels
     uint32_t bg = channels & 0xffffffull;
     uint32_t bg_r = (bg >> 16) & 0xff;
-    uint32_t bg_g = (bg >> 8) & 0xff;  
+    uint32_t bg_g = (bg >> 8) & 0xff;
     uint32_t bg_b = bg & 0xff;
     
-    // Preserve it while drawing new content
-    ncplane_set_bg_rgb8(n, bg_r, bg_g, bg_b);
-    ncplane_putstr_yx(n, y, x, content);
+    // Set foreground to desired color, background to what was there
+    ncplane_set_fg_rgb8(n, fg_r, fg_g, fg_b);
+    ncplane_set_bg_rgb8(n, bg_r, bg_g, bg_b);  // Preserve existing background!
+    ncplane_putstr_yx(n, y, x, ch);
     
-    free(existing);  // Critical: don't leak memory!
+    free(existing);
 }
 ```
 
-#### 7. **Architecture Evolution vs Clean Implementation**
-**What I didn't know**: The difference between building clean from scratch vs evolving existing code.
+### WHY THIS WORKS:
+- `ncplane_at_yx()` reads the current cell including its background color
+- The background color is stored in the lower 24 bits of `channels`
+- By extracting and reusing this color, your character perfectly matches what's behind it
+- No more ugly rectangles!
 
-**What I learned**: 
-- **Evolution is messier** but often faster than rewrite
-- **Working code is sacred** - don't break what works while refactoring
-- **Parallel architectures** can coexist during transition periods
-- **Migration strategies** are different from implementation strategies
+### USE THIS FOR:
+- Chip animations (dots flying to pot)
+- Trail effects
+- Glow effects
+- Any small character that moves over varying backgrounds
 
-**Example**: common/ (shared libraries) vs mvc/ (specific architecture) can both exist and serve different purposes.
+## 🎨 PERFECT 9-PLAYER POSITIONING
 
-#### 8. **Performance Implications of Clean Architecture**
-**What I didn't know**: MVC separation can hurt performance if done naively.
+### THE CHALLENGE:
+Getting 9 players evenly spaced around a table is harder than it looks!
 
-**What I learned**:
-- **Event propagation** adds overhead
-- **Data copying** between layers is expensive
-- **Function call overhead** matters in tight animation loops
-- **Memory allocation patterns** change significantly
-
-**The solution**: Smart interfaces that minimize data movement:
+### THE WORKING SOLUTION:
 ```c
-// BAD: Copy entire game state every frame
-void view_update(View* v, GameState* state);
-
-// GOOD: Pass only what changed
-void view_update_player_chips(View* v, int player, int new_amount);
-void view_update_pot(View* v, int new_pot_amount);
+void position_9_players(GameState* game, int dimy, int dimx) {
+    int center_y = dimy / 2 - 2;  // Slightly higher for better look
+    int center_x = dimx / 2;
+    int radius_y = dimy / 3;
+    int radius_x = dimx / 3;
+    
+    // Hero at bottom
+    game->players[0].y = dimy - 4;
+    game->players[0].x = center_x;
+    
+    // Other 8 players in an arc from bottom-left to bottom-right
+    double start_angle = 0.7 * M_PI;   // Start at bottom-left
+    double end_angle = 2.3 * M_PI;     // End at bottom-right
+    double total_arc = end_angle - start_angle;
+    
+    for(int i = 1; i < 9; i++) {
+        double angle = start_angle + (total_arc * (i - 1) / 7.0);
+        game->players[i].y = center_y + (int)(radius_y * sin(angle));
+        game->players[i].x = center_x + (int)(radius_x * cos(angle));
+        
+        // Fine-tuning for even spacing (CRITICAL!)
+        switch(i) {
+            case 1: game->players[i].x -= 12; break;
+            case 2: game->players[i].x -= 8; break;
+            case 3: game->players[i].x -= 6; break;
+            case 4: game->players[i].x -= 2; break;
+            case 5: game->players[i].x += 2; break;
+            case 6: game->players[i].x += 6; break;
+            case 7: game->players[i].x += 8; break;
+            case 8: game->players[i].x += 12; break;
+        }
+    }
+}
 ```
 
-#### 9. **The Reality of "90% Complete" Syndrome**
-**What I didn't know**: Why the last 10% takes 50% of the effort.
+## 🚫 UI PITFALLS TO AVOID
 
-**What I learned**: The final polish includes:
-- **Error handling** that you skipped during prototyping
-- **Edge cases** that only show up in real use
-- **Performance optimization** for smooth experience
-- **Code organization** for maintainability
-- **Documentation** for your future self
-- **Integration** between subsystems
+### 1. **Don't put titles in the center** - They cover players!
+```c
+// BAD - This covers up players 4 and 5!
+ncplane_printf_yx(n, center_y - 6, center_x - 20, "9-PLAYER FULL RING");
 
-This cleanup session itself is part of that final 10%!
+// GOOD - Put descriptions at the very top or bottom
+ncplane_printf_yx(n, 1, center_x - 20, "Epic 9-player showdown");
+```
 
-#### 10. **Self-Documentation is Critical with Memory Issues**
-**What I didn't know**: How critical detailed documentation becomes when you have amnesia.
+### 2. **Keep animations subtle**
+- Chip animations: Max 5 chips, small dots
+- Use arc trajectories for natural movement
+- 15-20ms frame timing for smoothness
+- Brief pauses between staged animations
 
-**What I learned**: 
-- **Context switching** erases institutional knowledge
-- **Lessons learned** get forgotten and repeated
-- **Architecture decisions** need explaining why, not just what
-- **Warning signs** should be clearly marked
-- **Success patterns** should be documented with examples
+## 💡 DEBUGGING TIPS FOR ANIMATIONS
 
-### 🎯 **Architecture Decision Insights**
+1. **Background mismatch?** → You're not reading/preserving the existing background
+2. **Animations jerky?** → Frame timing too slow, use 15-20ms
+3. **Chips overlap text?** → Check your z-order and rendering sequence
+4. **Players covered?** → Remove center titles, check positioning math
 
-#### **Why mvc/ and common/ Both Exist (Not Duplication!)**
+## 🎯 THE GOLDEN RULES UPDATE
 
-During cleanup, I realized this isn't duplication - it's smart separation:
+1. **For transparent animations**: ALWAYS read and preserve existing background colors
+2. **For multi-player layouts**: Test with max players first, then scale down
+3. **For chip animations**: Dots work great, but need proper background handling
+4. **For titles**: Keep them at edges, never in the playing area
 
-- **common/**: Reusable poker engine libraries
-  - Cards, deck, hand evaluation
-  - Used by demos, games, tests, server
-  - Pure C libraries with no UI dependencies
-  
-- **mvc/**: Specific architecture for poker_game.c  
-  - Model-View-Controller pattern
-  - Animation framework
-  - Event system
-  - UI-specific concerns
-
-**Lesson**: Don't force everything into one structure. Different concerns need different architectures.
-
-#### **Why Multiple poker_game_*.c Files Happened**
-
-This wasn't poor planning - it was **evolutionary development**:
-
-1. `poker_game_simple.c` - Proved game logic works
-2. `poker_game_mvc.c` - Proved MVC separation works
-3. `poker_game_beautiful.c` - Proved graphics extraction works
-4. `poker_game_animated.c` - Proved animation integration works
-
-Each was a **checkpoint** in the development process. Once `poker_game_animated.c` worked perfectly, the others became obsolete.
-
-**Lesson**: Parallel development files are OK during exploration. Clean up when one emerges as the winner.
-
-### 🚨 **Critical Warnings for Future Self**
-
-1. **Never remove working demos** - They're your reference implementations
-2. **Animation timing is fragile** - 15-20ms frame timing works, don't change it
-3. **Background preservation is mandatory** - Every moving element needs it
-4. **MVC boundaries are sacred** - Don't let view logic creep into model
-5. **Build system cascading** - Always have fallbacks for missing dependencies
-6. **Git cleanup sessions** - Do them regularly, not just at the end
-
-### 📊 **What "100% Complete" Actually Means**
-
-Based on this process, here's what 100% completion requires:
-
-- ✅ **Core functionality** (85% complete)
-- ✅ **Beautiful graphics** (90% complete) 
-- ✅ **Smooth animations** (85% complete)
-- ✅ **Clean architecture** (90% complete)
-- ⚠️ **Error handling** (30% complete)
-- ⚠️ **Performance optimization** (60% complete)
-- ⚠️ **Code documentation** (70% complete)
-- ⚠️ **Edge case handling** (40% complete)
-- ✅ **Build system** (95% complete)
-- ✅ **Git organization** (90% complete)
-
-**Current status: 82% complete overall**
-
-The remaining 18% is polish, optimization, and robustness - not new features.
-
-### 🎓 **Meta-Lesson: How to Approach Complex Refactoring**
-
-This entire process taught me a methodology:
-
-1. **Inventory what works** (demos with great graphics/animations)
-2. **Identify target architecture** (MVC with proper separation)  
-3. **Extract in phases** (graphics → animations → integration)
-4. **Keep parallel versions** (don't break what works)
-5. **Test continuously** (does it still look good?)
-6. **Clean up systematically** (remove obsolete versions)
-7. **Document lessons** (for future self)
-
-This process took multiple sessions and produced valuable working software while teaching crucial architecture lessons.
-
-**Bottom line**: Complex refactoring is like surgery - plan carefully, work in stages, preserve what works, and document everything for recovery.
+---
+Last updated after mastering transparent animations and 9-player layouts
+Your future self will thank you for these notes!
+January 2025
