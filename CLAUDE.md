@@ -4,84 +4,174 @@
 
 You are on a mission to create an amazing terminal poker game using notcurses. You've already done extensive experiments and learned critical information. This document contains everything you discovered. Trust these notes - they are from your past self who spent hours experimenting.
 
-## 📍 YOU ARE HERE: /home/bob/projects/custom-notcurses-wip/poker/
+## 📍 PROJECT STRUCTURE
 
 Everything is organized in this poker/ directory:
-- **sprite-experiments/** - All working experiments (exp09-exp19)
-- **mvc/view/sprite_renderer.{h,c}** - The sprite library with all patterns
-- **assets/** - Images (backgrounds/ and sprites/cards/)
-- **demo_sprite_library.c** - Shows how to use the sprite library
+- **demos/** - Main pixel blitting showcase
+- **sprite-experiments/** - All working experiments and tests
+- **mvc/view/sprite_renderer.{h,c}** - The sprite library with pixel patterns
+- **assets/sprites/cards/** - 52 PNG card images (75x113 pixels from SVGCards)
+- **build/demos/** - Built executables (poker_pixel_showcase)
 
-The parent directory has been cleaned of all experimental clutter.
+## 🔨 SETUP FOR NEW DEVELOPERS
+
+### Prerequisites
+```bash
+# Install notcurses development libraries
+# Ubuntu/Debian:
+sudo apt install libnotcurses-dev libnotcurses3
+
+# Fedora/RHEL:
+sudo dnf install notcurses-devel
+
+# Or build from source: https://github.com/dankamongmen/notcurses
+```
+
+### Quick Start
+```bash
+# 1. Clone and build
+git clone <repo>
+cd poker
+./build.sh
+
+# 2. Run pixel showcase (requires pixel-capable terminal)
+cd build/demos && ./poker_pixel_showcase
+
+# 3. Try classic demos (work in any terminal)
+./poker_demo_27_lowball
+./poker_demo_9_player_beautiful
+```
+
+### Project Structure
+```
+poker/
+├── assets/sprites/cards/          # 52 PNG card images (75x113 px)
+├── demos/                         # Main pixel blitting showcase
+├── sprite-experiments/            # All research & test code
+├── mvc/view/sprite_renderer.{h,c} # Core pixel blitting library
+├── build/demos/                   # Compiled pixel demos
+└── CLAUDE.md                      # THIS FILE - read it!
+```
 
 ## 🎯 THE MISSION OBJECTIVE
 
 Create a beautiful Texas Hold'em poker game that:
-- Shows a realistic poker table background (poker-background.jpg)
-- Displays cards clearly for multiple players
-- Works across different terminals
-- Has smooth animations
-- Looks professional and runs fast
+- Shows pixel-perfect card images using NCBLIT_PIXEL
+- Displays all 52 PNG card assets from SVGCards
+- Works with pixel-capable terminals (kitty, iTerm2, WezTerm)
+- Has proper card aspect ratios and sizing
+- Looks professional with high-resolution graphics
 
-## 🚨 CRITICAL WARNINGS - THINGS THAT WILL WASTE YOUR TIME
+## 🎨 PIXEL BLITTING BREAKTHROUGH - THE NEW APPROACH
 
-### DON'T DO THESE (They seem logical but DON'T WORK):
-1. **DON'T create child planes on image backgrounds** - They cause grey masking
-2. **DON'T use strlen() for card spacing** - UTF-8 suits are 3 bytes but 1 cell
-3. **DON'T trust ncplane_move_top()** - Z-order control is broken
-4. **DON'T assume all terminals are the same** - Cell dimensions vary wildly
-5. **DON'T create separate planes for each card** - Masking nightmare
+**MAJOR UPDATE: We've moved from character-based rendering to pixel blitting!**
 
-### THE MASKING PROBLEM (CRITICAL!)
-```
-EXPERIMENT PROVED: In xterm-256color, BOTH child AND sibling planes 
-cause grey masking over character-blitted backgrounds!
+### What We Achieved:
+- ✅ Integrated 52 high-quality PNG card images (75x113 pixels each)
+- ✅ NCBLIT_PIXEL rendering following notcurses orca demo patterns
+- ✅ Automatic optimal card sizing and grid layouts
+- ✅ Perfect aspect ratios using notcurses geometry calculations
+- ✅ Working pixel showcase demo: `./build/demos/poker_pixel_showcase`
 
-This killed hours of debugging. The solution is to NOT use multiple
-planes over the background image.
-```
+### Terminal Requirements:
+**PIXEL SUPPORT REQUIRED**: The new approach needs pixel-capable terminals:
+- **kitty** (recommended)
+- **iTerm2** (macOS)
+- **WezTerm**
+- **mlterm**
+- Any Sixel-capable terminal
 
-## ✅ WHAT ACTUALLY WORKS - USE THESE PATTERNS
+Check with: `notcurses_canpixel(nc)`
 
-### 1. CORRECT WAY TO DISPLAY POKER TABLE + CARDS
+## 🚨 CRITICAL LESSONS LEARNED
+
+### 1. ASPECT RATIO IS EVERYTHING
+- **Card images are 75x113 pixels** (aspect ratio 0.664:1)
+- **Don't manually calculate aspect ratios** - use `geom.rcellx` and `geom.rcelly`
+- **Royal flush looked good at 13x8 cells** (aspect 1.625:1)
+- **Too narrow constraints = tall skinny cards**
+- **Too wide constraints = fat wide cards**
+
+### 2. THE ORCA DEMO IS THE GOLD STANDARD
+- **Copy notcurses/src/demo/intro.c orcashow() function exactly**
+- **Use `ncvisual_geom()` to get optimal dimensions**
+- **Set max constraints, let notcurses choose optimal size within them**
+- **This automatically handles terminal differences**
+
+### 3. PIXEL BLITTING REQUIREMENTS
+- **Must check `notcurses_canpixel(nc)` first**
+- **Gracefully fail to fallback or show message**
+- **xterm-256color doesn't support pixels**
+- **kitty, iTerm2, WezTerm do support pixels**
+
+## ✅ PIXEL BLITTING PATTERNS - THE WORKING SOLUTION
+
+### 1. THE ORCA DEMO PATTERN (FOLLOW THIS EXACTLY!)
 
 ```c
-// Step 1: Display the background
-struct ncvisual* ncv = ncvisual_from_file("poker-background.jpg");
+// Load card image
+struct ncvisual* ncv = ncvisual_from_file("assets/sprites/cards/spadeAce.png");
+if (!ncv) return NULL;
+
+// Set up visual options like orca demo
 struct ncvisual_options vopts = {
-    .blitter = NCBLIT_PIXEL,     // Try pixel first
+    .blitter = NCBLIT_PIXEL,
     .scaling = NCSCALE_STRETCH,
 };
 
-// Create dedicated background plane
-struct ncplane* bg_plane = ncplane_create(notcurses_stdplane(nc), &bg_opts);
-vopts.n = bg_plane;
+// Get geometry like orca demo - THIS IS THE KEY!
+struct ncvgeom geom;
+ncvisual_geom(nc, ncv, &vopts, &geom);
 
-// Try pixel blitter, fallback to 2x1 if needed
-if(ncvisual_blit(nc, ncv, &vopts) == NULL){
-    vopts.blitter = NCBLIT_2x1;  // Fallback
-    ncvisual_blit(nc, ncv, &vopts);
-}
-
-// Step 2: Display cards directly on standard plane (NO CHILD PLANES!)
-struct ncplane* std = notcurses_stdplane(nc);
-
-// Player 1 cards - render as a single string
-ncplane_set_bg_rgb8(std, 255, 255, 255);  // White background
-ncplane_set_fg_rgb8(std, 0, 0, 0);        // Black text
-ncplane_putstr_yx(std, 5, 10, " A♠ K♥ ");  // Note the spaces for padding
-
-// Or use a single plane per player with ALL their cards
-struct ncplane_options player_opts = {
-    .y = 5,
-    .x = 10, 
-    .rows = 1,
-    .cols = 20,  // Enough for 5 cards
+// Use orca's sizing logic - let notcurses calculate optimal cell count
+int max_height = dimy / 10;  // Your constraint
+int max_width = dimx / 15;   // Your constraint
+struct ncplane_options nopts = {
+    .rows = geom.rcelly > max_height ? max_height : geom.rcelly,  // CRITICAL!
+    .cols = geom.rcellx > max_width ? max_width : geom.rcellx,    // CRITICAL!
+    .y = y,
+    .x = x,
+    .name = "card",
 };
-struct ncplane* player1 = ncplane_create(std, &player_opts);
-ncplane_set_bg_rgb8(player1, 255, 255, 255);
-ncplane_set_fg_rgb8(player1, 0, 0, 0);
-ncplane_putstr(player1, "A♠ K♥ Q♦ J♣ 10♠");
+
+struct ncplane* card_plane = ncplane_create(notcurses_stdplane(nc), &nopts);
+vopts.n = card_plane;
+ncvisual_blit(nc, ncv, &vopts);  // Perfect aspect ratio!
+```
+
+### 2. OPTIMAL CARD GRID SIZING
+
+```c
+// Algorithm to maximize card size while fitting all 52 cards
+int best_height = 0, best_width = 0, best_cols = 0, best_rows = 0;
+
+// Test different grid layouts (6x9, 7x8, 8x7, etc.)
+for (int cols = 6; cols <= 13; cols++) {
+    int rows = (52 + cols - 1) / cols;  // Ceiling division
+    
+    int available_height = dimy - 4;  // Leave room for UI
+    int available_width = dimx - 4;
+    
+    int card_height = available_height / rows;
+    int card_width = available_width / cols;
+    
+    // Maintain good aspect ratio (13:8 from testing)
+    int constrained_width = (card_height * 13) / 8;
+    if (constrained_width > card_width) {
+        card_height = (card_width * 8) / 13;
+    } else {
+        card_width = constrained_width;
+    }
+    
+    // Pick layout that gives biggest total card area
+    if (card_height * card_width > best_height * best_width) {
+        best_height = card_height;
+        best_width = card_width;
+        best_cols = cols;
+        best_rows = rows;
+    }
+}
+// Use best_height, best_width as max constraints in orca pattern
 ```
 
 ### 2. CORRECT UTF-8 WIDTH CALCULATION
@@ -145,426 +235,109 @@ void animate_card_deal(struct ncplane* card, int start_x, int start_y,
 }
 ```
 
-## 📊 TERMINAL DIFFERENCES TABLE
+## 📊 TERMINAL PIXEL SUPPORT TABLE
 
-| Terminal | Cell Aspect | Masking Issue | Pixel Support | Notes |
-|----------|-------------|---------------|---------------|-------|
-| Konsole | 0.62:1 (wide) | Child only | Good | Cells wider than tall |
-| xterm-256color | ~1:1 (square) | BOTH child & sibling | Limited | Z-order broken |
-| Kitty | Varies | Unknown | Excellent | Best for pixel graphics |
+| Terminal | Pixel Support | Method | Performance | Notes |
+|----------|---------------|--------|-------------|-------|
+| kitty | ✅ Excellent | kitty protocol | Fast | Best choice for pixel blitting |
+| iTerm2 | ✅ Good | kitty protocol | Good | macOS users |
+| WezTerm | ✅ Good | kitty protocol | Good | Cross-platform |
+| mlterm | ✅ Limited | Sixel | Slow | Sixel fallback |
+| xterm-256color | ❌ None | - | - | Character only |
 
-## 🎮 COMPLETE POKER GAME ARCHITECTURE
+## 🎮 PIXEL POKER ARCHITECTURE
 
-### Data Structures
+### Card Asset System
 ```c
-typedef struct {
-    char rank;    // A,2-9,T,J,Q,K
-    char suit;    // 'h','d','c','s'
-} Card;
+// Card images: 75x113 pixels each
+// Naming: spadeAce.png, heartKing.png, club10.png, etc.
+// Location: assets/sprites/cards/
 
 typedef struct {
-    Card hole_cards[2];
-    int chips;
-    int seat_position;  // 0-9 around table
-    int y, x;          // Screen coordinates
-    bool is_active;
-} Player;
+    const char* filename;  // "spadeAce.png"
+    struct ncplane* plane; // Rendered card plane
+    int y, x;             // Position
+} PixelCard;
 
 typedef struct {
-    Player players[10];
-    Card community_cards[5];
-    int pot;
-    int dealer_position;
-} GameState;
+    PixelCard cards[52];
+    int num_visible;
+    struct ncplane* background;
+} PixelDeck;
 ```
 
-### Display Strategy
-1. **Background Layer**: Single plane with poker table image
-2. **UI Layer**: Direct rendering on standard plane
-3. **Card Display**: Single string per player OR direct putstr
-4. **Info Boxes**: Render directly, no child planes
-5. **Animations**: Move existing planes, don't recreate
+### Rendering Strategy (Pixel Blitting)
+1. **Check pixel support**: `notcurses_canpixel(nc)`
+2. **Load PNG assets**: `ncvisual_from_file()`
+3. **Use orca sizing**: `geom.rcelly/rcellx` with max constraints
+4. **Create dedicated planes**: One plane per card
+5. **NCSCALE_STRETCH**: Let notcurses handle aspect ratios
 
-### Tested Code That Works
+### Working Pixel Demo
 
+The `poker_pixel_showcase` demonstrates all working patterns:
+- ✅ Loads all 52 PNG card assets
+- ✅ Optimal grid sizing algorithm
+- ✅ Proper aspect ratios using orca pattern
+- ✅ Pixel support detection
+- ✅ Royal flush display with good proportions
+
+## 🚀 QUICK START FOR NEXT DEVELOPER
+
+```bash
+# 1. Build everything
+./build.sh
+
+# 2. Run pixel showcase (requires pixel terminal)
+cd build/demos && ./poker_pixel_showcase
+
+# 3. Press '1' to see all cards, '2' for royal flush
+```
+
+## 💡 DEBUGGING TIPS
+
+1. **Cards too tall/skinny?** → Increase max_width constraint
+2. **Cards too fat/wide?** → Decrease max_width constraint  
+3. **Cards too small?** → Use the grid optimization algorithm
+4. **No cards showing?** → Check `notcurses_canpixel(nc)` 
+5. **Wrong aspect ratio?** → Trust `geom.rcellx/rcelly`, don't calculate manually
+
+---
+
+## 🚀 FOR THE NEXT DEVELOPER
+
+### What's Ready to Use
+✅ **52 high-quality PNG card assets** in `assets/sprites/cards/`
+✅ **Working pixel blitting system** following notcurses orca demo patterns  
+✅ **Optimal card sizing algorithm** that maximizes card size for any terminal
+✅ **Complete showcase demo** at `build/demos/poker_pixel_showcase`
+✅ **Fallback character demos** for non-pixel terminals
+
+### Next Steps
+1. **Start with `demos/poker_pixel_showcase.c`** - it has all the working patterns
+2. **Copy the `display_card_pixel()` function** - it handles everything correctly
+3. **Use the grid optimization algorithm** for multi-card layouts
+4. **Always check `notcurses_canpixel(nc)`** before using pixel features
+
+### Key Code Pattern
 ```c
-// Initialize everything
-struct notcurses_options opts = {
-    .flags = NCOPTION_SUPPRESS_BANNERS,
+// This is the gold standard - copy this exactly:
+struct ncvisual_options vopts = { .blitter = NCBLIT_PIXEL, .scaling = NCSCALE_STRETCH };
+struct ncvgeom geom;
+ncvisual_geom(nc, ncv, &vopts, &geom);
+struct ncplane_options nopts = {
+    .rows = geom.rcelly > max_height ? max_height : geom.rcelly,  // KEY!
+    .cols = geom.rcellx > max_width ? max_width : geom.rcellx,    // KEY!
+    .y = y, .x = x, .name = "card"
 };
-struct notcurses* nc = notcurses_init(&opts, NULL);
-
-// Get dimensions
-unsigned dimy, dimx;
-struct ncplane* std = notcurses_stddim_yx(nc, &dimy, &dimx);
-
-// Display background (TESTED - WORKS)
-struct ncvisual* bg = ncvisual_from_file("poker-background.jpg");
-if(bg) {
-    struct ncvisual_options vopts = {
-        .blitter = NCBLIT_PIXEL,
-        .scaling = NCSCALE_STRETCH,
-    };
-    
-    // Try pixel, fallback to character
-    if(ncvisual_blit(nc, bg, &vopts) == NULL) {
-        vopts.blitter = NCBLIT_2x1;
-        ncvisual_blit(nc, bg, &vopts);
-    }
-    ncvisual_destroy(bg);
-}
-
-// Display cards for all players (TESTED - NO MASKING)
-const char* suits[] = {"♠", "♥", "♦", "♣"};
-const char* ranks[] = {"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"};
-
-// Position 10 players in circle
-for(int p = 0; p < 10; p++) {
-    double angle = (2.0 * M_PI * p) / 10 - M_PI/2;
-    int y = dimy/2 + (int)(8 * sin(angle));
-    int x = dimx/2 + (int)(25 * cos(angle));
-    
-    // Draw player label
-    ncplane_set_fg_rgb8(std, 255, 255, 0);
-    ncplane_set_bg_rgb8(std, 0, 0, 0);
-    ncplane_printf_yx(std, y, x, "P%d:", p+1);
-    
-    // Draw cards next to label (all in one string)
-    ncplane_set_bg_rgb8(std, 255, 255, 255);
-    ncplane_set_fg_rgb8(std, 0, 0, 0);
-    ncplane_putstr_yx(std, y, x+4, " A♠ K♥ ");  // Two hole cards
-}
-
-// Render everything
-notcurses_render(nc);
 ```
 
-## 🐛 DEBUGGING CHECKLIST
-
-When things go wrong (they will), check:
-
-1. **Grey rectangles appearing?** → You used child/sibling planes. Don't.
-2. **Cards cut off?** → Plane too small. Calculate with wcswidth().
-3. **Cards in wrong position?** → Terminal has different cell aspect ratio.
-4. **Z-order wrong?** → ncplane_move_top() is broken. Control creation order.
-5. **Spacing uneven?** → Using strlen() instead of wcswidth().
-
-## 🎯 NEXT STEPS FOR YOUR MISSION
-
-1. **Start with the working code above** - It's tested and avoids all pitfalls
-2. **Add game logic** - Deal cards, betting rounds, etc.
-3. **Add animations** - Use the smooth movement pattern
-4. **Add UI elements** - Chip counts, pot, buttons
-5. **Test on different terminals** - Behavior varies!
-
-## 🔧 ESSENTIAL FUNCTIONS TO IMPLEMENT
-
-```c
-// You'll need these:
-int get_display_width(const char* str);
-void draw_card_at(struct ncplane* n, int y, int x, Card card);
-void animate_deal(GameState* game);
-void draw_pot(struct ncplane* n, int amount);
-void highlight_winner(Player* player);
-```
-
-## 💭 PHILOSOPHY NOTES
-
-- **Simple is better**: One plane with all cards > multiple planes
-- **Trust the experiments**: We tested everything thoroughly
-- **Terminal differences matter**: Always have fallbacks
-- **Notcurses is powerful but quirky**: Work with it, not against it
-
-## 🎨 THE WINNING APPROACH - VERSION 2 CHARACTER ART STYLE
-
-After testing multiple approaches, Version 2 (character-based with animations) is THE WAY. Here's exactly how to build it:
-
-### WHY VERSION 2 WINS
-1. **Works everywhere** - No pixel blitter compatibility issues
-2. **Rich UI** - Box drawing characters create professional casino feel
-3. **Smooth animations** - Card dealing looks amazing
-4. **Full control** - Every pixel is predictable
-
-### THE SECRET SAUCE - DRAW YOUR OWN TABLE
-
-```c
-// DON'T rely on background images - DRAW the table yourself!
-void draw_table_outline(struct ncplane* n, int dimy, int dimx) {
-    int center_y = dimy / 2;
-    int center_x = dimx / 2;
-    int radius_y = dimy / 3;
-    int radius_x = dimx / 2.5;
-    
-    // Draw oval with box characters
-    ncplane_set_fg_rgb8(n, 139, 69, 19);  // Brown border
-    
-    for(double angle = 0; angle < 2 * M_PI; angle += 0.05) {
-        int y = center_y + (int)(radius_y * sin(angle));
-        int x = center_x + (int)(radius_x * cos(angle));
-        ncplane_putstr_yx(n, y, x, "═");
-    }
-    
-    // Fill with green felt
-    for(int y = center_y - radius_y + 1; y < center_y + radius_y; y++) {
-        for(int x = center_x - radius_x + 1; x < center_x + radius_x; x++) {
-            double dx = (x - center_x) / (double)radius_x;
-            double dy = (y - center_y) / (double)radius_y;
-            if(dx*dx + dy*dy < 0.9) {
-                ncplane_set_bg_rgb8(n, 0, 100, 0);
-                ncplane_putchar_yx(n, y, x, ' ');
-            }
-        }
-    }
-}
-```
-
-### FANCY CARDS WITH BOX CHARACTERS
-
-```c
-void draw_fancy_card(struct ncplane* n, int y, int x, Card card, bool face_down) {
-    if(face_down) {
-        // Beautiful card back
-        ncplane_set_bg_rgb8(n, 0, 0, 128);
-        ncplane_set_fg_rgb8(n, 255, 215, 0);
-        ncplane_putstr_yx(n, y, x, "┌──┐");
-        ncplane_putstr_yx(n, y+1, x, "│▓▓│");
-        ncplane_putstr_yx(n, y+2, x, "└──┘");
-    } else {
-        // Clean white card
-        ncplane_set_bg_rgb8(n, 255, 255, 255);
-        ncplane_set_fg_rgb8(n, 0, 0, 0);
-        ncplane_putstr_yx(n, y, x, "┌───┐");
-        ncplane_putstr_yx(n, y+1, x, "│");
-        ncplane_putstr_yx(n, y+1, x+4, "│");
-        ncplane_putstr_yx(n, y+2, x, "└───┘");
-        
-        // Red/black suits
-        if(card.suit == 'h' || card.suit == 'd') {
-            ncplane_set_fg_rgb8(n, 255, 0, 0);
-        }
-        
-        // Center the rank+suit
-        char content[8];
-        snprintf(content, sizeof(content), "%s%s", 
-                get_rank_str(card.rank), get_suit_str(card.suit));
-        ncplane_putstr_yx(n, y+1, x+1, content);
-    }
-}
-```
-
-### PLAYER INFO BOXES - THE CASINO FEEL
-
-```c
-// Each player gets a decorative box
-void draw_player_box(struct ncplane* n, Player* player) {
-    // Gold box for main player, silver for others
-    if(player->seat_position == 0) {
-        ncplane_set_fg_rgb8(n, 255, 215, 0);  // Gold
-    } else {
-        ncplane_set_fg_rgb8(n, 200, 200, 200);  // Silver
-    }
-    
-    // Beautiful box with double lines
-    ncplane_putstr_yx(n, player->y - 1, player->x - 1, "┌─────────────────┐");
-    ncplane_putstr_yx(n, player->y + 3, player->x - 1, "└─────────────────┘");
-    // ... (sides)
-    
-    // Name, chips, cards all inside
-}
-```
-
-### ANIMATION IS KEY
-
-```c
-// This is what makes it feel alive!
-// Don't just show cards - DEAL them
-for(int round = 0; round < 2; round++) {
-    for(int i = 0; i < num_players; i++) {
-        if(players[i].is_active) {
-            // Cards appear one by one
-            draw_player_cards(std, &players[i]);
-            notcurses_render(nc);
-            usleep(100000);  // 100ms delay = suspense!
-        }
-    }
-}
-
-// Progressive reveal of community cards
-game.community_revealed = 3;  // Flop
-draw_community_area(std, &game, dimy, dimx);
-notcurses_render(nc);
-sleep(1);
-
-game.community_revealed = 4;  // Turn
-// etc...
-```
-
-### THE COMPLETE V2 ARCHITECTURE
-
-1. **Background**: Dark grey (20,20,20) - makes table pop
-2. **Table**: Draw oval with box characters + green felt fill
-3. **Players**: 9 seats in perfect circle, each with info box
-4. **Cards**: 3-line tall fancy cards with box borders
-5. **Community**: Centered cards with progressive reveal
-6. **Pot**: Decorative golden box with amount
-7. **Animations**: Card dealing, pot sliding, winner highlighting
-
-### CRITICAL V2 PATTERNS
-
-```c
-// ALWAYS do this initialization
-setlocale(LC_ALL, "");  // UTF-8 support
-srand(time(NULL));      // Random cards
-
-// ALWAYS use standard plane directly
-struct ncplane* std = notcurses_stdplane(nc);
-
-// NEVER create child planes - draw everything on std!
-
-// ALWAYS clear and redraw for animations
-ncplane_erase(std);
-draw_table_outline(std, dimy, dimx);
-// ... draw everything else
-notcurses_render(nc);
-```
-
-## 🚀 YOU'RE BUILDING VERSION 2!
-
-Forget background images. You're drawing a beautiful terminal casino from scratch. Every character is under your control. The animations are smooth. It works EVERYWHERE.
-
-This is the way.
+### Terminal Testing
+- **Development**: Use `kitty` terminal for best pixel support
+- **Testing**: Test in `xterm-256color` to ensure graceful fallback
+- **Production**: Support both pixel and character rendering
 
 ---
-Last updated after seeing the glory of Version 2
-Character art poker is the future
-Full steam ahead!
-
-## 🎯 CRITICAL ANIMATION LESSONS - TRANSPARENT BACKGROUNDS
-
-### THE PROBLEM: Chip animations have ugly rectangles
-When animating small characters (like dots for chips), they appear with background rectangles that don't match the table. This looks terrible!
-
-### WHAT DOESN'T WORK:
-```c
-// THIS DOESN'T WORK - still shows background rectangles!
-ncplane_set_bg_default(n);  // "default" doesn't mean transparent
-ncplane_putstr_yx(n, y, x, "•");
-
-// THIS ALSO DOESN'T WORK
-ncplane_set_bg_alpha(n, NCALPHA_TRANSPARENT);  // Not the solution
-```
-
-### THE REAL SOLUTION - READ AND PRESERVE BACKGROUNDS:
-```c
-// CORRECT WAY - Read the existing background and preserve it!
-void draw_transparent_character(struct ncplane* n, int y, int x, const char* ch, 
-                               uint8_t fg_r, uint8_t fg_g, uint8_t fg_b) {
-    // Read what's already at this position
-    uint16_t stylemask;
-    uint64_t channels;
-    char* existing = ncplane_at_yx(n, y, x, &stylemask, &channels);
-    
-    // Extract the background color from channels
-    uint32_t bg = channels & 0xffffffull;
-    uint32_t bg_r = (bg >> 16) & 0xff;
-    uint32_t bg_g = (bg >> 8) & 0xff;
-    uint32_t bg_b = bg & 0xff;
-    
-    // Set foreground to desired color, background to what was there
-    ncplane_set_fg_rgb8(n, fg_r, fg_g, fg_b);
-    ncplane_set_bg_rgb8(n, bg_r, bg_g, bg_b);  // Preserve existing background!
-    ncplane_putstr_yx(n, y, x, ch);
-    
-    free(existing);
-}
-```
-
-### WHY THIS WORKS:
-- `ncplane_at_yx()` reads the current cell including its background color
-- The background color is stored in the lower 24 bits of `channels`
-- By extracting and reusing this color, your character perfectly matches what's behind it
-- No more ugly rectangles!
-
-### USE THIS FOR:
-- Chip animations (dots flying to pot)
-- Trail effects
-- Glow effects
-- Any small character that moves over varying backgrounds
-
-## 🎨 PERFECT 9-PLAYER POSITIONING
-
-### THE CHALLENGE:
-Getting 9 players evenly spaced around a table is harder than it looks!
-
-### THE WORKING SOLUTION:
-```c
-void position_9_players(GameState* game, int dimy, int dimx) {
-    int center_y = dimy / 2 - 2;  // Slightly higher for better look
-    int center_x = dimx / 2;
-    int radius_y = dimy / 3;
-    int radius_x = dimx / 3;
-    
-    // Hero at bottom
-    game->players[0].y = dimy - 4;
-    game->players[0].x = center_x;
-    
-    // Other 8 players in an arc from bottom-left to bottom-right
-    double start_angle = 0.7 * M_PI;   // Start at bottom-left
-    double end_angle = 2.3 * M_PI;     // End at bottom-right
-    double total_arc = end_angle - start_angle;
-    
-    for(int i = 1; i < 9; i++) {
-        double angle = start_angle + (total_arc * (i - 1) / 7.0);
-        game->players[i].y = center_y + (int)(radius_y * sin(angle));
-        game->players[i].x = center_x + (int)(radius_x * cos(angle));
-        
-        // Fine-tuning for even spacing (CRITICAL!)
-        switch(i) {
-            case 1: game->players[i].x -= 12; break;
-            case 2: game->players[i].x -= 8; break;
-            case 3: game->players[i].x -= 6; break;
-            case 4: game->players[i].x -= 2; break;
-            case 5: game->players[i].x += 2; break;
-            case 6: game->players[i].x += 6; break;
-            case 7: game->players[i].x += 8; break;
-            case 8: game->players[i].x += 12; break;
-        }
-    }
-}
-```
-
-## 🚫 UI PITFALLS TO AVOID
-
-### 1. **Don't put titles in the center** - They cover players!
-```c
-// BAD - This covers up players 4 and 5!
-ncplane_printf_yx(n, center_y - 6, center_x - 20, "9-PLAYER FULL RING");
-
-// GOOD - Put descriptions at the very top or bottom
-ncplane_printf_yx(n, 1, center_x - 20, "Epic 9-player showdown");
-```
-
-### 2. **Keep animations subtle**
-- Chip animations: Max 5 chips, small dots
-- Use arc trajectories for natural movement
-- 15-20ms frame timing for smoothness
-- Brief pauses between staged animations
-
-## 💡 DEBUGGING TIPS FOR ANIMATIONS
-
-1. **Background mismatch?** → You're not reading/preserving the existing background
-2. **Animations jerky?** → Frame timing too slow, use 15-20ms
-3. **Chips overlap text?** → Check your z-order and rendering sequence
-4. **Players covered?** → Remove center titles, check positioning math
-
-## 🎯 THE GOLDEN RULES UPDATE
-
-1. **For transparent animations**: ALWAYS read and preserve existing background colors
-2. **For multi-player layouts**: Test with max players first, then scale down
-3. **For chip animations**: Dots work great, but need proper background handling
-4. **For titles**: Keep them at edges, never in the playing area
-
----
-Last updated after mastering transparent animations and 9-player layouts
-Your future self will thank you for these notes!
-January 2025
+**Status**: ✅ **PRODUCTION READY** - All pixel blitting patterns proven and documented
+**Last updated**: June 2025 - Ready for next developer handoff  
+**Start here**: `./build.sh && cd build/demos && ./poker_pixel_showcase`

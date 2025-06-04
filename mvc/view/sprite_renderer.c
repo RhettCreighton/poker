@@ -94,13 +94,9 @@ struct ncplane* render_poker_background(struct notcurses* nc) {
     vopts.n = bg_plane;
     
     if (!ncvisual_blit(nc, ncv, &vopts)) {
-        // Try character blitter as fallback
-        vopts.blitter = NCBLIT_2x1;
-        if (!ncvisual_blit(nc, ncv, &vopts)) {
-            ncplane_destroy(bg_plane);
-            ncvisual_destroy(ncv);
-            return NULL;
-        }
+        ncplane_destroy(bg_plane);
+        ncvisual_destroy(ncv);
+        return NULL;
     }
     
     ncvisual_destroy(ncv);
@@ -110,7 +106,20 @@ struct ncplane* render_poker_background(struct notcurses* nc) {
 // Build card filename from rank and suit
 void build_card_filename(char* buffer, size_t size, 
                         const char* rank, const char* suit) {
-    snprintf(buffer, size, "%s%s%s.png", CARD_SPRITES_PATH, suit, rank);
+    // Convert rank to match SVGCards naming convention
+    const char* rank_name = rank;
+    if (strcmp(rank, "A") == 0) {
+        rank_name = "Ace";
+    } else if (strcmp(rank, "K") == 0) {
+        rank_name = "King";
+    } else if (strcmp(rank, "Q") == 0) {
+        rank_name = "Queen";
+    } else if (strcmp(rank, "J") == 0) {
+        rank_name = "Jack";
+    }
+    // Numbers stay as-is (2-10)
+    
+    snprintf(buffer, size, "%s%s%s.png", CARD_SPRITES_PATH, suit, rank_name);
 }
 
 // Render card from filename (with caching)
@@ -124,10 +133,20 @@ struct ncplane* render_card_from_file(struct notcurses* nc, int y, int x,
         .scaling = NCSCALE_STRETCH,
     };
     
-    // Create tiny plane (3x5 - optimal size)
+    // Get geometry information like orca demo
+    struct ncvgeom geom;
+    ncvisual_geom(nc, ncv, &vopts, &geom);
+    
+    // Calculate max card size based on screen dimensions
+    unsigned dimy, dimx;
+    notcurses_stddim_yx(nc, &dimy, &dimx);
+    
+    // Use orca's sizing logic - let notcurses calculate optimal cell count
+    int max_height = dimy / 10;
+    int max_width = dimx / 15;
     struct ncplane_options nopts = {
-        .rows = CARD_ROWS,
-        .cols = CARD_COLS,
+        .rows = geom.rcelly > max_height ? max_height : geom.rcelly,
+        .cols = geom.rcellx > max_width ? max_width : geom.rcellx,
         .y = y,
         .x = x,
         .name = "card",

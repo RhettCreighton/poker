@@ -55,6 +55,16 @@ else
     else
         echo "⚠️  Failed to compile poker game"
     fi
+    
+    # Build pixel blitting demos
+    echo "🔨 Building pixel blitting demos..."
+    mkdir -p build/demos
+    if cc -o build/demos/poker_pixel_showcase demos/poker_pixel_showcase.c \
+       mvc/view/sprite_renderer.c -I. -lnotcurses-core -lnotcurses -lm -D_GNU_SOURCE 2>/dev/null; then
+        echo "✅ Pixel showcase demo compiled"
+    else
+        echo "⚠️  Failed to compile pixel showcase"
+    fi
 fi
 
 echo ""
@@ -73,5 +83,9 @@ fi
 if [ -f tournament_27_draw ]; then
     echo "  ./tournament_27_draw - Full tournament with ncurses UI"
 fi
+if [ -f build/demos/poker_pixel_showcase ]; then
+    echo "  ./build/demos/poker_pixel_showcase - 🎨 PIXEL BLITTING Showcase (Requires pixel terminal!)"
+fi
 echo ""
 echo "Run: ./run.sh to see the demos!"
+echo "For pixel blitting: cd build/demos && ./poker_pixel_showcase"
