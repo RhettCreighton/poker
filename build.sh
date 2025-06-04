@@ -65,6 +65,20 @@ else
     else
         echo "⚠️  Failed to compile pixel showcase"
     fi
+    
+    if cc -o build/demos/poker_pixel_10player_lowball demos/poker_pixel_10player_lowball.c \
+       mvc/view/sprite_renderer.c -I. -lnotcurses-core -lnotcurses -lm -D_GNU_SOURCE 2>/dev/null; then
+        echo "✅ 10-player pixel lowball demo compiled"
+    else
+        echo "⚠️  Failed to compile 10-player pixel lowball demo"
+    fi
+    
+    if cc -o build/demos/poker_pixel_10player_lowball_v2 demos/poker_pixel_10player_lowball_v2.c \
+       -I. -lnotcurses-core -lnotcurses -lm -lpthread -D_GNU_SOURCE 2>/dev/null; then
+        echo "✅ 10-player pixel lowball V2 (clean) compiled"
+    else
+        echo "⚠️  Failed to compile 10-player pixel lowball V2"
+    fi
 fi
 
 echo ""
@@ -85,6 +99,12 @@ if [ -f tournament_27_draw ]; then
 fi
 if [ -f build/demos/poker_pixel_showcase ]; then
     echo "  ./build/demos/poker_pixel_showcase - 🎨 PIXEL BLITTING Showcase (Requires pixel terminal!)"
+fi
+if [ -f build/demos/poker_pixel_10player_lowball ]; then
+    echo "  ./build/demos/poker_pixel_10player_lowball - 🎰 10-PLAYER PIXEL 2-7 Lowball (Requires pixel terminal!)"
+fi
+if [ -f build/demos/poker_pixel_10player_lowball_v2 ]; then
+    echo "  ./build/demos/poker_pixel_10player_lowball_v2 - 🎯 CLEAN PRO 10-PLAYER (Test with --test flag)"
 fi
 echo ""
 echo "Run: ./run.sh to see the demos!"

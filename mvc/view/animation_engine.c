@@ -72,6 +72,9 @@ AnimationEngine* anim_engine_create(void) {
     
     engine->max_particles = 1000;
     engine->time_scale = 1.0f;
+    engine->target_fps = 60.0f;
+    engine->current_fps = 60.0f;
+    engine->last_frame_time = 0;
     
     return engine;
 }
@@ -323,4 +326,15 @@ int anim_frames_for_duration(int duration_ms, int fps) {
 
 bool anim_is_complete(float progress) {
     return progress >= 1.0f;
+}
+
+void anim_engine_set_target_fps(AnimationEngine* engine, float fps) {
+    if (engine && fps > 0) {
+        engine->target_fps = fps;
+    }
+}
+
+float anim_engine_get_current_fps(AnimationEngine* engine) {
+    if (!engine) return 0.0f;
+    return engine->current_fps;
 }

@@ -47,6 +47,11 @@ typedef struct AnimationEngine {
     uint64_t frame_count;
     float time_scale;     // For slow-mo effects
     
+    // Performance tracking
+    float target_fps;
+    int64_t last_frame_time;
+    float current_fps;
+    
     // Callbacks
     void (*on_animation_complete)(int anim_id, void* data);
     void* callback_data;
@@ -69,6 +74,8 @@ float ease_out_back(float t);
 AnimationEngine* anim_engine_create(void);
 void anim_engine_destroy(AnimationEngine* engine);
 void anim_engine_update(AnimationEngine* engine);
+void anim_engine_set_target_fps(AnimationEngine* engine, float fps);
+float anim_engine_get_current_fps(AnimationEngine* engine);
 
 // Transform animations
 void anim_transform_init(AnimationTransform* transform, float start_x, float start_y, 

@@ -35,12 +35,20 @@ cd poker
 ./build.sh
 
 # 2. Run pixel showcase (requires pixel-capable terminal)
-cd build/demos && ./poker_pixel_showcase
+./build/demos/poker_pixel_showcase
 
 # 3. Try classic demos (work in any terminal)
-./poker_demo_27_lowball
-./poker_demo_9_player_beautiful
+./build/demos/poker_demo_27_lowball
+./build/demos/poker_demo_9_player_beautiful
+
+# 4. Run the complete animation demo
+./demos/poker_animation_final
+
+# 5. Run animation tests
+./demos/poker_animation_test --test
 ```
+
+**IMPORTANT**: All commands should be run from the project root directory!
 
 ### Project Structure
 ```
@@ -340,4 +348,14 @@ struct ncplane_options nopts = {
 ---
 **Status**: ✅ **PRODUCTION READY** - All pixel blitting patterns proven and documented
 **Last updated**: June 2025 - Ready for next developer handoff  
-**Start here**: `./build.sh && cd build/demos && ./poker_pixel_showcase`
+**Start here**: `./build.sh && ./build/demos/poker_pixel_showcase`
+
+## 📝 COMMAND CONVENTIONS
+
+**ALWAYS run commands from the project root directory!** Never use `cd` to change into subdirectories before running commands. All paths in this document assume you are at the poker project root.
+
+Examples:
+- ✅ `./demos/poker_animation_final`
+- ✅ `./build/demos/poker_pixel_showcase`
+- ❌ `cd demos && ./poker_animation_final`
+- ❌ `cd build/demos && ./poker_pixel_showcase`
