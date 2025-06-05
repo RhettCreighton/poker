@@ -55,9 +55,20 @@ if(BUILD_BENCHMARKS)
     add_subdirectory(benchmarks)
 endif()
 
+# P2P Network tests
+add_executable(test_p2p_network test_p2p_network.c)
+target_link_libraries(test_p2p_network
+    poker_network
+    poker_ai
+    poker_common
+    pthread
+    ${M_LIBRARY}
+)
+add_test(NAME test_p2p_network COMMAND test_p2p_network)
+
 # Custom test target that shows output
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS test_cards
+    DEPENDS test_cards test_p2p_network
     COMMENT "Running tests..."
 )
