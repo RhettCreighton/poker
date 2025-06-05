@@ -2,7 +2,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define _GNU_SOURCE  // For usleep
 #include "network/p2p_protocol.h"
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

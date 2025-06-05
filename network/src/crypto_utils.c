@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define _POSIX_C_SOURCE 199309L  // For clock_gettime
 #include "network/p2p_protocol.h"
 #include <string.h>
 #include <stdlib.h>
@@ -437,7 +438,7 @@ bool poker_log_decrypt_cards(const uint8_t* encrypted, uint32_t encrypted_size,
         uint8_t rank = decrypted[i];
         uint8_t suit = decrypted[i + 1];
         
-        if (rank >= RANK_2 && rank <= RANK_ACE &&
+        if (rank >= RANK_2 && rank <= RANK_A &&
             suit >= SUIT_CLUBS && suit <= SUIT_SPADES) {
             cards_out[*num_cards_out].rank = rank;
             cards_out[*num_cards_out].suit = suit;

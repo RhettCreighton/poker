@@ -21,11 +21,11 @@ target_link_libraries(poker_client PUBLIC
     notcurses
 )
 
-# Client executable
-add_executable(poker_client_exe
-    # main.c
-)
-
-target_link_libraries(poker_client_exe PRIVATE
-    poker_client
-)
+# Client executable - commented out until main.c exists
+# add_executable(poker_client_exe
+#     main.c
+# )
+# 
+# target_link_libraries(poker_client_exe PRIVATE
+#     poker_client
+# )

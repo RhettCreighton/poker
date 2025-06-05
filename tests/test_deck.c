@@ -28,7 +28,7 @@ static void test_deck_creation(void) {
         Card* card = deck_peek_at(deck, i);
         assert(card != NULL);
         assert(card->suit >= SUIT_CLUBS && card->suit <= SUIT_SPADES);
-        assert(card->rank >= RANK_2 && card->rank <= RANK_ACE);
+        assert(card->rank >= RANK_2 && card->rank <= RANK_A);
         card_counts[card->suit][card->rank - RANK_2]++;
     }
     
@@ -202,8 +202,8 @@ static void test_deck_remove_cards(void) {
     
     // Remove specific cards
     Card cards_to_remove[3];
-    cards_to_remove[0] = card_create(RANK_ACE, SUIT_SPADES);
-    cards_to_remove[1] = card_create(RANK_KING, SUIT_HEARTS);
+    cards_to_remove[0] = card_create(RANK_A, SUIT_SPADES);
+    cards_to_remove[1] = card_create(RANK_K, SUIT_HEARTS);
     cards_to_remove[2] = card_create(RANK_2, SUIT_CLUBS);
     
     deck_remove_cards(deck, cards_to_remove, 3);
@@ -219,7 +219,7 @@ static void test_deck_remove_cards(void) {
     }
     
     // Try to remove non-existent card (should have no effect)
-    Card non_existent = card_create(RANK_ACE, SUIT_SPADES); // Already removed
+    Card non_existent = card_create(RANK_A, SUIT_SPADES); // Already removed
     deck_remove_cards(deck, &non_existent, 1);
     assert(deck_size(deck) == 49);
     

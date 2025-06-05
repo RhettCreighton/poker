@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "poker/cards.h"
 #include "poker/player.h"
+#include "poker/game_state.h"
 #include "network/p2p_protocol.h"
 
 // Log-based message structures for poker actions

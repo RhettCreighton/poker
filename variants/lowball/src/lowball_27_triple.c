@@ -136,7 +136,7 @@ static void lowball_triple_start_hand(GameState* game) {
     }
     
     // Set up first betting round
-    game->current_round = ROUND_PRE_DRAW;
+    game->current_round = ROUND_PREFLOP;
     game->hand_complete = false;
 }
 
@@ -168,15 +168,15 @@ static void lowball_triple_deal_street(GameState* game, BettingRound round) {
     LowballTripleState* state = (LowballTripleState*)game->variant_state;
     
     switch (round) {
-        case ROUND_FIRST_DRAW:
+        case ROUND_DRAW_1:
             state->current_draw = 0;
             state->is_draw_phase = true;
             break;
-        case ROUND_SECOND_DRAW:
+        case ROUND_DRAW_2:
             state->current_draw = 1;
             state->is_draw_phase = true;
             break;
-        case ROUND_THIRD_DRAW:
+        case ROUND_DRAW_3:
             state->current_draw = 2;
             state->is_draw_phase = true;
             break;
@@ -188,7 +188,7 @@ static void lowball_triple_deal_street(GameState* game, BettingRound round) {
 
 static bool lowball_triple_is_dealing_complete(GameState* game) {
     LowballTripleState* state = (LowballTripleState*)game->variant_state;
-    return game->current_round == ROUND_FINAL && !state->is_draw_phase;
+    return game->current_round == ROUND_SHOWDOWN && !state->is_draw_phase;
 }
 
 static bool lowball_triple_is_action_valid(GameState* game, int player_idx, PlayerAction action, int64_t amount) {
@@ -372,7 +372,7 @@ static void lowball_triple_start_betting_round(GameState* game, BettingRound rou
     }
     
     // Handle blinds for pre-draw
-    if (round == ROUND_PRE_DRAW) {
+    if (round == ROUND_PREFLOP) {
         // Small blind
         int sb_seat = (game->dealer_button + 1) % game->max_players;
         Player* sb = &game->players[sb_seat];
@@ -406,7 +406,7 @@ static void lowball_triple_start_betting_round(GameState* game, BettingRound rou
     }
     
     // Check if this is a draw round
-    if (round == ROUND_FIRST_DRAW || round == ROUND_SECOND_DRAW || round == ROUND_THIRD_DRAW) {
+    if (round == ROUND_DRAW_1 || round == ROUND_DRAW_2 || round == ROUND_DRAW_3) {
         lowball_triple_deal_street(game, round);
     }
     
@@ -427,17 +427,17 @@ static void lowball_triple_end_betting_round(GameState* game) {
     // Determine next round
     BettingRound next_round;
     switch (game->current_round) {
-        case ROUND_PRE_DRAW:
-            next_round = ROUND_FIRST_DRAW;
+        case ROUND_PREFLOP:
+            next_round = ROUND_DRAW_1;
             break;
-        case ROUND_FIRST_DRAW:
-            next_round = ROUND_SECOND_DRAW;
+        case ROUND_DRAW_1:
+            next_round = ROUND_DRAW_2;
             break;
-        case ROUND_SECOND_DRAW:
-            next_round = ROUND_THIRD_DRAW;
+        case ROUND_DRAW_2:
+            next_round = ROUND_DRAW_3;
             break;
-        case ROUND_THIRD_DRAW:
-            next_round = ROUND_FINAL;
+        case ROUND_DRAW_3:
+            next_round = ROUND_SHOWDOWN;
             break;
         default:
             return;  // Hand should end
@@ -473,11 +473,11 @@ static void lowball_triple_get_best_hand(GameState* game, int player_idx, Card* 
 
 static const char* lowball_triple_get_round_name(BettingRound round) {
     switch (round) {
-        case ROUND_PRE_DRAW: return "Pre-Draw";
-        case ROUND_FIRST_DRAW: return "First Draw";
-        case ROUND_SECOND_DRAW: return "Second Draw";
-        case ROUND_THIRD_DRAW: return "Third Draw";
-        case ROUND_FINAL: return "Final Betting";
+        case ROUND_PREFLOP: return "Pre-Draw";
+        case ROUND_DRAW_1: return "First Draw";
+        case ROUND_DRAW_2: return "Second Draw";
+        case ROUND_DRAW_3: return "Third Draw";
+        case ROUND_SHOWDOWN: return "Final Betting";
         default: return "Unknown";
     }
 }

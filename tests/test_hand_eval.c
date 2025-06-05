@@ -16,11 +16,11 @@ Card parse_card(const char* str) {
     
     // Parse rank
     switch (str[0]) {
-        case 'A': card.rank = RANK_ACE; break;
-        case 'K': card.rank = RANK_KING; break;
-        case 'Q': card.rank = RANK_QUEEN; break;
-        case 'J': card.rank = RANK_JACK; break;
-        case 'T': card.rank = RANK_10; break;
+        case 'A': card.rank = RANK_A; break;
+        case 'K': card.rank = RANK_K; break;
+        case 'Q': card.rank = RANK_Q; break;
+        case 'J': card.rank = RANK_J; break;
+        case 'T': card.rank = RANK_T; break;
         case '9': card.rank = RANK_9; break;
         case '8': card.rank = RANK_8; break;
         case '7': card.rank = RANK_7; break;
@@ -169,7 +169,7 @@ void test_7card_combinations(void) {
     
     HandRank best = hand_eval_7cards(cards);
     assert(best.type == HAND_STRAIGHT);
-    assert(best.primary == RANK_ACE); // Should find ace-high straight
+    assert(best.primary == RANK_A); // Should find ace-high straight
     
     // Test case with flush and straight possibility
     const char* flush_straight[] = {"9H", "8H", "7H", "6H", "5H", "4D", "3D"};

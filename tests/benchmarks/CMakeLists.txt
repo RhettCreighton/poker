@@ -14,39 +14,11 @@
 
 # Benchmark configuration
 
-# Simple timing utilities
-add_library(bench_utils STATIC
-    bench_utils.c
-)
+# Benchmarks are not yet implemented
+# TODO: Add benchmark implementations
 
-# Hand evaluation benchmark
-add_executable(bench_hand_eval
-    bench_hand_eval.c
-)
-target_link_libraries(bench_hand_eval poker_common bench_utils m)
-target_include_directories(bench_hand_eval PRIVATE
-    ${CMAKE_SOURCE_DIR}/common/include
-)
-
-# Rendering benchmark
-add_executable(bench_rendering
-    bench_rendering.c
-    ${CMAKE_SOURCE_DIR}/src/ui/rendering.c
-)
-target_link_libraries(bench_rendering bench_utils ${NOTCURSES_LIBRARIES} m)
-
-# Full game benchmark
-add_executable(bench_full_game
-    bench_full_game.c
-    ${POKER_SOURCES}
-)
-target_link_libraries(bench_full_game bench_utils ${NOTCURSES_LIBRARIES} m pthread)
-
-# Combined benchmark runner
+# Placeholder target
 add_custom_target(benchmark
-    COMMAND bench_hand_eval
-    COMMAND bench_rendering
-    COMMAND bench_full_game
-    DEPENDS bench_hand_eval bench_rendering bench_full_game
-    COMMENT "Running all benchmarks..."
+    COMMAND ${CMAKE_COMMAND} -E echo "Benchmarks not yet implemented"
+    COMMENT "Benchmarks placeholder..."
 )

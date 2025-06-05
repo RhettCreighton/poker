@@ -38,7 +38,7 @@ static void draw_start_hand(GameState* game) {
     memset(state->cards_dealt, 0, sizeof(state->cards_dealt));
     memset(state->draws_made, 0, sizeof(state->draws_made));
     memset(state->has_drawn, 0, sizeof(state->has_drawn));
-    game->current_round = ROUND_PRE_DRAW;
+    game->current_round = ROUND_PREFLOP;
     game->hand_complete = false;
     
     // Post blinds
@@ -232,7 +232,7 @@ static void draw_apply_action(GameState* game, int player, PlayerAction action, 
 }
 
 static int draw_get_first_to_act(GameState* game, BettingRound round) {
-    if (round == ROUND_PRE_DRAW) {
+    if (round == ROUND_PREFLOP) {
         // UTG is first to act pre-draw
         return (game->dealer_button + 3) % game->num_players;
     } else {
@@ -283,7 +283,7 @@ static void draw_end_betting_round(GameState* game) {
     DrawState* state = (DrawState*)game->variant_state;
     
     // If this was pre-draw betting, now handle draws
-    if (game->current_round == ROUND_PRE_DRAW) {
+    if (game->current_round == ROUND_PREFLOP) {
         // In a real implementation, we'd handle draw decisions here
         // For now, simulate standing pat for all players
         for (int i = 0; i < game->num_players; i++) {
@@ -293,7 +293,7 @@ static void draw_end_betting_round(GameState* game) {
         }
         
         // Move to post-draw betting
-        game->current_round = ROUND_FINAL;
+        game->current_round = ROUND_SHOWDOWN;
     }
     
     // Reset bets
@@ -337,8 +337,8 @@ static void draw_get_best_hand(GameState* game, int player, Card* out_cards, int
 
 static const char* draw_get_round_name(BettingRound round) {
     switch (round) {
-        case ROUND_PRE_DRAW: return "Pre-draw";
-        case ROUND_FINAL: return "Post-draw";
+        case ROUND_PREFLOP: return "Pre-draw";
+        case ROUND_SHOWDOWN: return "Post-draw";
         default: return "Unknown";
     }
 }

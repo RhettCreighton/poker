@@ -25,6 +25,7 @@ endif()
 
 target_include_directories(poker_lowball PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
 )
 
 target_link_libraries(poker_lowball PUBLIC

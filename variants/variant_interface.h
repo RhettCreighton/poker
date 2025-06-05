@@ -19,10 +19,12 @@
 
 #include "poker/cards.h"
 #include "poker/player.h"
+#include "poker/hand_eval.h"
+#include "poker/game_state.h"  // Include the actual GameState definition
 #include <stdbool.h>
+#include <stdint.h>
 
-// Forward declarations
-typedef struct GameState GameState;
+// Forward declaration for PokerVariant only
 typedef struct PokerVariant PokerVariant;
 
 // Variant types
@@ -41,7 +43,9 @@ typedef enum {
     BETTING_SPREAD      // Spread limit
 } BettingStructure;
 
-// Betting round identifiers
+// Betting round identifiers - check if already defined
+#ifndef BETTING_ROUND_DEFINED
+#define BETTING_ROUND_DEFINED
 typedef enum {
     ROUND_PREFLOP = 0,
     ROUND_FLOP,
@@ -58,48 +62,16 @@ typedef enum {
     ROUND_FIRST_DRAW,
     ROUND_SECOND_DRAW,
     ROUND_THIRD_DRAW,
-    ROUND_FINAL
+    ROUND_FINAL,
+    // Aliases
+    ROUND_SHOWDOWN = ROUND_FINAL,
+    ROUND_DRAW_1 = ROUND_FIRST_DRAW,
+    ROUND_DRAW_2 = ROUND_SECOND_DRAW,
+    ROUND_DRAW_3 = ROUND_THIRD_DRAW
 } BettingRound;
+#endif
 
-// Game state (variant-agnostic)
-typedef struct GameState {
-    // Variant being played
-    const PokerVariant* variant;
-    
-    // Players
-    Player* players;
-    int num_players;
-    int max_players;
-    
-    // Deck and cards
-    void* deck;  // Deck*
-    Card community_cards[5];
-    int community_count;
-    
-    // Betting state
-    BettingRound current_round;
-    int action_on;      // Seat number of player to act
-    int last_aggressor; // Last player to bet/raise
-    int64_t current_bet;
-    int64_t min_raise;
-    int64_t pot;
-    
-    // Blind/ante info
-    int64_t small_blind;
-    int64_t big_blind;
-    int64_t ante;
-    int64_t bring_in;   // For stud
-    
-    // Position
-    int dealer_button;
-    
-    // Hand info
-    uint64_t hand_number;
-    bool hand_complete;
-    
-    // Variant-specific state
-    void* variant_state;
-} GameState;
+// GameState is defined in poker/game_state.h - no need to redefine
 
 // Variant interface - all variants must implement these functions
 typedef struct PokerVariant {

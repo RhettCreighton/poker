@@ -39,7 +39,7 @@ static void razz_start_hand(GameState* game) {
     memset(state->cards_dealt, 0, sizeof(state->cards_dealt));
     memset(state->face_up, 0, sizeof(state->face_up));
     state->bring_in_player = -1;
-    game->current_round = ROUND_THIRD_STREET;
+    game->current_round = ROUND_FLOP;
     game->hand_complete = false;
     
     // Post antes
@@ -108,16 +108,16 @@ static void razz_deal_street(GameState* game, BettingRound round) {
     bool face_up = true;
     
     switch (round) {
-        case ROUND_FOURTH_STREET:
+        case ROUND_TURN:
             card_index = 3;
             break;
-        case ROUND_FIFTH_STREET:
+        case ROUND_RIVER:
             card_index = 4;
             break;
-        case ROUND_SIXTH_STREET:
+        case ROUND_SHOWDOWN:
             card_index = 5;
             break;
-        case ROUND_SEVENTH_STREET:
+        case ROUND_SHOWDOWN:
             card_index = 6;
             face_up = false; // River card is dealt face down
             break;
@@ -318,7 +318,7 @@ static int get_best_razz_hand_player(GameState* game) {
 static int razz_get_first_to_act(GameState* game, BettingRound round) {
     RazzState* state = (RazzState*)game->variant_state;
     
-    if (round == ROUND_THIRD_STREET) {
+    if (round == ROUND_FLOP) {
         // Bring-in acts first
         if (state->bring_in_player < 0) {
             state->bring_in_player = razz_determine_bring_in(game);
@@ -351,7 +351,7 @@ static bool razz_is_action_valid(GameState* game, int player, PlayerAction actio
         case ACTION_RAISE:
             // Fixed limit for Razz
             if (game->betting_structure == BETTING_LIMIT) {
-                int64_t bet_size = (game->current_round <= ROUND_FOURTH_STREET) ? 
+                int64_t bet_size = (game->current_round <= ROUND_TURN) ? 
                                   game->big_blind : game->big_blind * 2;
                 return amount == game->current_bet + bet_size &&
                        p->chips >= amount - p->current_bet;
@@ -432,7 +432,7 @@ static void razz_start_betting_round(GameState* game, BettingRound round) {
     
     // Set bet size based on round (for limit games)
     if (game->betting_structure == BETTING_LIMIT) {
-        game->min_raise = (round <= ROUND_FOURTH_STREET) ? 
+        game->min_raise = (round <= ROUND_TURN) ? 
                          game->big_blind : game->big_blind * 2;
     }
     
@@ -536,11 +536,11 @@ static void razz_get_best_hand(GameState* game, int player, Card* out_cards, int
 
 static const char* razz_get_round_name(BettingRound round) {
     switch (round) {
-        case ROUND_THIRD_STREET: return "Third Street";
-        case ROUND_FOURTH_STREET: return "Fourth Street";
-        case ROUND_FIFTH_STREET: return "Fifth Street";
-        case ROUND_SIXTH_STREET: return "Sixth Street";
-        case ROUND_SEVENTH_STREET: return "Seventh Street";
+        case ROUND_FLOP: return "Third Street";
+        case ROUND_TURN: return "Fourth Street";
+        case ROUND_RIVER: return "Fifth Street";
+        case ROUND_SHOWDOWN: return "Sixth Street";
+        case ROUND_SHOWDOWN: return "Seventh Street";
         default: return "Unknown";
     }
 }

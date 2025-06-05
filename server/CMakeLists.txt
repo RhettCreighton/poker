@@ -35,14 +35,16 @@ else()
     )
 endif()
 
-# P2P simulation executable
-add_executable(p2p_simulation src/p2p_simulation_main.c)
-target_link_libraries(p2p_simulation PRIVATE
-    poker_network
-    poker_ai
-    poker_common
-    pthread
-)
+# P2P simulation executable (first definition)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/p2p_simulation_main.c")
+    add_executable(p2p_simulation src/p2p_simulation_main.c)
+    target_link_libraries(p2p_simulation PRIVATE
+        poker_network
+        poker_ai
+        poker_common
+        pthread
+    )
+endif()
 
 target_include_directories(poker_server PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -66,26 +68,17 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/server_main.c")
     set_target_properties(poker_server_exe PROPERTIES OUTPUT_NAME "poker_server")
 endif()
 
-# P2P simulation executable
-add_executable(p2p_simulation
-    src/p2p_simulation_main.c
-)
+# P2P simulation executable (duplicate removed - already defined above)
 
-target_link_libraries(p2p_simulation PRIVATE
-    poker_server
-    poker_network
-    poker_ai
-)
-
-# Test utilities
-if(BUILD_TESTS)
-    add_executable(test_consensus
-        tests/test_consensus.c
-    )
-    target_link_libraries(test_consensus PRIVATE poker_server poker_network)
-    
-    add_executable(test_gossip
-        tests/test_gossip.c
-    )
-    target_link_libraries(test_gossip PRIVATE poker_server poker_network)
-endif()
+# Test utilities - commented out as test files don't exist
+# if(BUILD_TESTS)
+#     add_executable(test_consensus
+#         tests/test_consensus.c
+#     )
+#     target_link_libraries(test_consensus PRIVATE poker_server poker_network)
+#     
+#     add_executable(test_gossip
+#         tests/test_gossip.c
+#     )
+#     target_link_libraries(test_gossip PRIVATE poker_server poker_network)
+# endif()

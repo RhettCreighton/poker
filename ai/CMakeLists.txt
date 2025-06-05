@@ -27,6 +27,7 @@ target_include_directories(poker_ai PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/common/include
     ${CMAKE_SOURCE_DIR}/variants
+    ${CMAKE_SOURCE_DIR}  # For variant_interface.h access
 )
 
 target_link_libraries(poker_ai PUBLIC

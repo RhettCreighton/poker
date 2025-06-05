@@ -835,7 +835,7 @@ HandEvalStats hand_eval_get_stats(void) {
 }
 
 // Initialize all lookup tables
-void hand_eval_init(void) {
+bool hand_eval_init(void) {
     init_bit_count_table();
     init_straight_table();
     init_unique5_table();
@@ -843,6 +843,7 @@ void hand_eval_init(void) {
     
     // Reset stats
     hand_eval_reset_stats();
+    return true;
 }
 
 // Cleanup

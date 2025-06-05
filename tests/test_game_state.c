@@ -161,18 +161,18 @@ static void test_hand_evaluation_integration(void) {
     game_state_new_hand(state);
     
     // Manually set hole cards for testing
-    p1->hole_cards[0] = card_create(RANK_ACE, SUIT_SPADES);
-    p1->hole_cards[1] = card_create(RANK_ACE, SUIT_HEARTS);
+    p1->hole_cards[0] = card_create(RANK_A, SUIT_SPADES);
+    p1->hole_cards[1] = card_create(RANK_A, SUIT_HEARTS);
     
-    p2->hole_cards[0] = card_create(RANK_KING, SUIT_SPADES);
-    p2->hole_cards[1] = card_create(RANK_KING, SUIT_HEARTS);
+    p2->hole_cards[0] = card_create(RANK_K, SUIT_SPADES);
+    p2->hole_cards[1] = card_create(RANK_K, SUIT_HEARTS);
     
     // Set community cards
-    state->community_cards[0] = card_create(RANK_ACE, SUIT_DIAMONDS);
-    state->community_cards[1] = card_create(RANK_KING, SUIT_DIAMONDS);
-    state->community_cards[2] = card_create(RANK_QUEEN, SUIT_SPADES);
-    state->community_cards[3] = card_create(RANK_JACK, SUIT_SPADES);
-    state->community_cards[4] = card_create(RANK_10, SUIT_SPADES);
+    state->community_cards[0] = card_create(RANK_A, SUIT_DIAMONDS);
+    state->community_cards[1] = card_create(RANK_K, SUIT_DIAMONDS);
+    state->community_cards[2] = card_create(RANK_Q, SUIT_SPADES);
+    state->community_cards[3] = card_create(RANK_J, SUIT_SPADES);
+    state->community_cards[4] = card_create(RANK_T, SUIT_SPADES);
     
     // Advance to showdown
     state->stage = STAGE_SHOWDOWN;
@@ -347,7 +347,7 @@ static void test_state_serialization(void) {
     state->big_blind = 20;
     state->hand_number = 42;
     state->pot = 150;
-    state->stage = STAGE_TURN;
+    state->current_round = ROUND_TURN;
     
     // Serialize
     char buffer[4096];

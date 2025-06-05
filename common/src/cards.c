@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
+#define _XOPEN_SOURCE 700  // For wcswidth
+
 #include "poker/cards.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <wchar.h>
 #include <locale.h>
+#include <stdlib.h>
 
 // Card creation
 Card card_create(Rank rank, Suit suit) {
@@ -68,7 +71,7 @@ const char* rank_to_string(Rank rank) {
         NULL, NULL, "Two", "Three", "Four", "Five", "Six", "Seven",
         "Eight", "Nine", "Ten", "Jack", "Queen", "King", "Ace"
     };
-    if (rank >= RANK_2 && rank <= RANK_ACE) {
+    if (rank >= RANK_2 && rank <= RANK_A) {
         return rank_names[rank];
     }
     return "Unknown";
@@ -78,7 +81,7 @@ char rank_to_char(Rank rank) {
     static const char rank_chars[] = {
         0, 0, '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'
     };
-    if (rank >= RANK_2 && rank <= RANK_ACE) {
+    if (rank >= RANK_2 && rank <= RANK_A) {
         return rank_chars[rank];
     }
     return '?';
@@ -93,11 +96,11 @@ Card card_from_string(const char* str) {
     
     // Parse rank
     switch (toupper(str[0])) {
-        case 'A': card.rank = RANK_ACE; break;
-        case 'K': card.rank = RANK_KING; break;
-        case 'Q': card.rank = RANK_QUEEN; break;
-        case 'J': card.rank = RANK_JACK; break;
-        case 'T': case '1': card.rank = RANK_10; break;  // Allow 'T' or '10'
+        case 'A': card.rank = RANK_A; break;
+        case 'K': card.rank = RANK_K; break;
+        case 'Q': card.rank = RANK_Q; break;
+        case 'J': card.rank = RANK_J; break;
+        case 'T': case '1': card.rank = RANK_T; break;  // Allow 'T' or '10'
         case '9': card.rank = RANK_9; break;
         case '8': card.rank = RANK_8; break;
         case '7': card.rank = RANK_7; break;

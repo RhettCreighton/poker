@@ -191,3 +191,53 @@ void deck_return_cards(Deck* deck, const Card* cards, int count) {
     // Shuffle the returned cards into the remaining deck
     deck_shuffle_remaining(deck);
 }
+
+// Additional functions for compatibility
+
+// Initialize short deck (32 cards for 2-7 lowball)
+void deck_init_short(Deck* deck) {
+    deck_init_subset(deck, RANK_7);
+}
+
+// Safe dealing with success indicator
+bool deck_deal_safe(Deck* deck, Card* card) {
+    if (!deck || !card || deck->position >= deck->size) {
+        return false;
+    }
+    
+    *card = deck_deal(deck);
+    return true;
+}
+
+// Remove a specific card from the deck
+bool deck_remove_card(Deck* deck, Card card) {
+    if (!deck) return false;
+    
+    for (int i = deck->position; i < deck->size; i++) {
+        if (card_equals(deck->cards[i], card)) {
+            // Shift remaining cards down
+            for (int k = i; k < deck->size - 1; k++) {
+                deck->cards[k] = deck->cards[k + 1];
+            }
+            deck->size--;
+            return true;
+        }
+    }
+    return false;
+}
+
+// Find if a card exists in the deck
+bool deck_find_card(const Deck* deck, Card card) {
+    return deck_contains(deck, card);
+}
+
+// Shuffle partial deck starting from a position
+void deck_shuffle_partial(Deck* deck, int start_pos) {
+    if (!deck || start_pos >= deck->size - 1) return;
+    
+    // Temporarily adjust position and shuffle
+    int saved_pos = deck->position;
+    deck->position = start_pos;
+    deck_shuffle_remaining(deck);
+    deck->position = saved_pos;
+}

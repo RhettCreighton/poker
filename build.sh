@@ -16,9 +16,17 @@ mkdir -p build
 # Try CMake build first (full platform)
 echo "🔨 Attempting CMake build..."
 cd build
-if cmake .. -DCMAKE_BUILD_TYPE=Release 2>/dev/null && make -j$(nproc) 2>/dev/null; then
-    echo "✅ CMake build successful!"
-    cd ..
+
+# Configure with CMake
+echo "📋 Running CMake configuration..."
+if cmake .. -DCMAKE_BUILD_TYPE=Release; then
+    echo "✅ CMake configuration successful!"
+    
+    # Try to build
+    echo "🔨 Building with make..."
+    if make -j$(nproc); then
+        echo "✅ CMake build successful!"
+        cd ..
     
     # Copy executables to root for easy access
     if [ -f build/poker_game_standalone ]; then
@@ -26,12 +34,16 @@ if cmake .. -DCMAKE_BUILD_TYPE=Release 2>/dev/null && make -j$(nproc) 2>/dev/nul
         echo "✅ Standalone game available as: ./poker_game"
     fi
     
-    if [ -f build/src/main/tournament_27_draw ]; then
-        cp build/src/main/tournament_27_draw ./tournament_27_draw
-        echo "✅ Tournament game available as: ./tournament_27_draw"
+        if [ -f build/src/main/tournament_27_draw ]; then
+            cp build/src/main/tournament_27_draw ./tournament_27_draw
+            echo "✅ Tournament game available as: ./tournament_27_draw"
+        fi
+    else
+        echo "⚠️  Build failed, falling back to simple compilation..."
+        cd ..
     fi
 else
-    echo "⚠️  CMake build failed, falling back to simple compilation..."
+    echo "⚠️  CMake configuration failed, falling back to simple compilation..."
     cd ..
     
     # Fallback: compile demos and games directly

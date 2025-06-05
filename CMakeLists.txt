@@ -97,9 +97,9 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/variants/
     FILES_MATCHING PATTERN "*.h"
 )
 
-# Standalone game
-add_executable(poker_game_standalone standalone_27_draw.c)
-target_link_libraries(poker_game_standalone ${M_LIBRARY})
+# Standalone game - commented out as file doesn't exist
+# add_executable(poker_game_standalone standalone_27_draw.c)
+# target_link_libraries(poker_game_standalone ${M_LIBRARY})
 
 # Assets (if they exist)
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/assets)

@@ -5,13 +5,22 @@ cmake_minimum_required(VERSION 3.13)
 set(COMMON_SOURCES "")
 
 # Check each expected source file
-foreach(SOURCE_FILE cards.c deck.c hand_eval.c player.c game_state.c game_manager.c)
+foreach(SOURCE_FILE cards.c deck.c)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/${SOURCE_FILE}")
         list(APPEND COMMON_SOURCES "src/${SOURCE_FILE}")
     else()
         message(STATUS "Common library: ${SOURCE_FILE} not found, skipping")
     endif()
 endforeach()
+
+# Use fixed/stub implementations
+list(APPEND COMMON_SOURCES "src/player_fixed.c" "src/game_state_fixed.c" "src/hand_eval_stub.c")
+
+# Add error handling and logging
+list(APPEND COMMON_SOURCES "src/error.c" "src/logger.c")
+
+# Add persistence layer
+list(APPEND COMMON_SOURCES "src/persistence.c" "src/autosave.c")
 
 # Ensure we have at least some source files
 if(NOT COMMON_SOURCES)

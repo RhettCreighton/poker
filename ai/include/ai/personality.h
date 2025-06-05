@@ -1,24 +1,14 @@
-/*
- * Copyright 2025 Rhett Creighton
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *     http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+/* SPDX-FileCopyrightText: 2025 Rhett Creighton
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef POKER_AI_PERSONALITY_H
 #define POKER_AI_PERSONALITY_H
 
 #include "poker/player.h"
-#include "variants/variant_interface.h"
+#include "poker/game_state.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 // AI decision result
 typedef struct {
@@ -26,23 +16,43 @@ typedef struct {
     int64_t amount;
     float confidence;  // 0.0 - 1.0
     const char* reasoning;  // For debugging
+    bool won_hand;
+    bool lost_hand;
 } AIDecision;
 
-// AI personality traits
 typedef struct {
-    // Basic traits (0.0 - 1.0)
-    float aggression;        // How often to bet/raise vs check/call
-    float tightness;         // Hand selection strictness
+    bool won_hand;
+    bool lost_hand;
+    int64_t amount_won;
+    int64_t amount_lost;
+} AIDecisionResult;
+
+// AI personality traits (compatible with ai_player.h)
+typedef struct {
+    char name[64];
+    int type;  // Will be cast to AIPlayerType from ai_player.h
+    
+    // Core traits (0.0 - 1.0)
+    float aggression;         // How often to bet/raise vs check/call
+    float tightness;         // Hand selection strictness (inverse of VPIP)
     float bluff_frequency;   // How often to bluff
-    float fear_factor;       // Response to aggression
-    float tilt_susceptibility; // Emotional variance
+    float risk_tolerance;    // Overall risk tolerance
+    
+    // Statistical targets
+    float vpip_target;       // Voluntarily put in pot %
+    float pfr_target;        // Pre-flop raise %
     
     // Advanced traits
     float position_awareness;  // How much position affects play
     float pot_odds_accuracy;   // How well they calculate odds
     float hand_reading_skill;  // Ability to deduce opponent hands
-    float adaptability;        // How quickly they adjust to opponents
+    float adaptation_rate;     // How quickly they adjust to opponents
     float deception;          // Mixing up play patterns
+    
+    // Behavioral traits
+    float tilt_factor;        // How easily tilted
+    float emotional_control;  // Ability to control emotions
+    uint32_t hand_memory;     // How many hands they remember
     
     // Style modifiers
     float continuation_bet;    // C-bet frequency
@@ -51,29 +61,28 @@ typedef struct {
     float steal_frequency;    // Blind stealing attempts
     float three_bet;          // 3-bet frequency
     
-    // Behavioral quirks
-    const char* tell_when_bluffing;
-    const char* tell_when_strong;
-    float tell_reliability;   // How often tells are accurate
-    
     // Metadata
-    const char* name;
     const char* description;
     const char* avatar;       // Emoji or ASCII art
     int skill_level;          // 1-10 overall skill
-} AIPersonality;
+} PersonalityTraits, AIPersonality;
 
 // Pre-defined personalities
-extern const AIPersonality AI_PERSONALITY_FISH;        // Loose passive beginner
-extern const AIPersonality AI_PERSONALITY_ROCK;        // Tight passive
-extern const AIPersonality AI_PERSONALITY_TAG;         // Tight aggressive
-extern const AIPersonality AI_PERSONALITY_LAG;         // Loose aggressive
-extern const AIPersonality AI_PERSONALITY_MANIAC;      // Super aggressive
-extern const AIPersonality AI_PERSONALITY_CALLING_STATION; // Calls everything
-extern const AIPersonality AI_PERSONALITY_NIT;         // Ultra tight
-extern const AIPersonality AI_PERSONALITY_SHARK;       // Balanced pro
-extern const AIPersonality AI_PERSONALITY_TILTED;      // Emotionally compromised
-extern const AIPersonality AI_PERSONALITY_BEGINNER;    // Learning player
+extern const AIPersonality AI_PERSONALITY_TIGHT_PASSIVE;
+extern const AIPersonality AI_PERSONALITY_TIGHT_AGGRESSIVE;
+extern const AIPersonality AI_PERSONALITY_LOOSE_PASSIVE;
+extern const AIPersonality AI_PERSONALITY_LOOSE_AGGRESSIVE;
+extern const AIPersonality AI_PERSONALITY_RANDOM;
+
+// Legacy compatibility
+#define AI_PERSONALITY_FISH AI_PERSONALITY_LOOSE_PASSIVE
+#define AI_PERSONALITY_ROCK AI_PERSONALITY_TIGHT_PASSIVE  
+#define AI_PERSONALITY_TAG AI_PERSONALITY_TIGHT_AGGRESSIVE
+#define AI_PERSONALITY_LAG AI_PERSONALITY_LOOSE_AGGRESSIVE
+#define AI_PERSONALITY_MANIAC AI_PERSONALITY_LOOSE_AGGRESSIVE
+#define AI_PERSONALITY_CALLING_STATION AI_PERSONALITY_LOOSE_PASSIVE
+#define AI_PERSONALITY_NIT AI_PERSONALITY_TIGHT_PASSIVE
+#define AI_PERSONALITY_SHARK AI_PERSONALITY_TIGHT_AGGRESSIVE
 
 // AI state tracking
 typedef struct {
@@ -109,10 +118,8 @@ float ai_calculate_hand_strength(const GameState* game, int player_index);
 float ai_calculate_pot_odds(const GameState* game);
 float ai_calculate_implied_odds(const GameState* game, int player_index);
 
-// Opponent modeling
-void ai_update_opponent_model(AIState* state, int opponent, 
-                             PlayerAction action, int64_t amount);
-float ai_estimate_opponent_range(const AIState* state, int opponent);
+// Opponent modeling (internal use in personality.c)
+// These are different from the ai_player.h versions which take AIPlayer*
 
 // Tilt and emotion
 void ai_update_tilt_level(AIState* state, bool won_pot, int64_t pot_size);

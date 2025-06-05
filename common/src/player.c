@@ -67,13 +67,23 @@ void player_set_name(Player* player, const char* name) {
     player->name[MAX_PLAYER_NAME - 1] = '\0';
 }
 
-// Add card to player's hand
-void player_add_card(Player* player, Card card, bool face_up) {
+// Add card to player's hand with face up/down for stud games
+void player_add_card_face(Player* player, Card card, bool face_up) {
     if (!player || player->num_hole_cards >= MAX_HOLE_CARDS) return;
     
     player->hole_cards[player->num_hole_cards] = card;
     player->card_face_up[player->num_hole_cards] = face_up;
     player->num_hole_cards++;
+}
+
+// Add card to player's hand (simple version)
+bool player_add_card(Player* player, Card card) {
+    if (!player || player->num_cards >= MAX_CARDS_PER_PLAYER) {
+        return false;
+    }
+    
+    player->cards[player->num_cards++] = card;
+    return true;
 }
 
 // Clear all cards
@@ -120,12 +130,12 @@ bool player_can_act(const Player* player) {
     if (!player) return false;
     
     return player->state == PLAYER_STATE_ACTIVE && 
-           player->stack > 0;
+           player->chips > 0;
 }
 
 // Check if player has chips
 bool player_has_chips(const Player* player) {
-    return player && player->stack > 0;
+    return player && player->chips > 0;
 }
 
 // Calculate amount needed to call
@@ -136,8 +146,8 @@ int64_t player_get_call_amount(const Player* player, int64_t current_bet) {
     if (to_call < 0) to_call = 0;
     
     // Can't call more than stack
-    if (to_call > player->stack) {
-        to_call = player->stack;
+    if (to_call > player->chips) {
+        to_call = player->chips;
     }
     
     return to_call;
@@ -151,8 +161,8 @@ int64_t player_get_min_raise(const Player* player, int64_t current_bet, int64_t 
     int64_t raise_to = current_bet + min_raise;
     
     // But can't raise more than stack
-    if (raise_to > player->bet + player->stack) {
-        raise_to = player->bet + player->stack;
+    if (raise_to > player->bet + player->chips) {
+        raise_to = player->bet + player->chips;
     }
     
     return raise_to;

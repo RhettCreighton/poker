@@ -12,6 +12,7 @@ if(HOLDEM_SOURCES)
     
     target_include_directories(poker_holdem PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}  # Add root directory for variant_interface.h
     )
     
     target_link_libraries(poker_holdem PUBLIC
@@ -30,6 +31,7 @@ else()
     
     target_include_directories(poker_holdem PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}  # Add root directory for variant_interface.h
     )
     
     target_link_libraries(poker_holdem PUBLIC

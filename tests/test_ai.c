@@ -62,16 +62,16 @@ static void test_hand_strength_calculation(void) {
     GameState* state = game_state_create();
     
     // Set up hole cards - pocket aces
-    ai->player->hole_cards[0] = card_create(RANK_ACE, SUIT_SPADES);
-    ai->player->hole_cards[1] = card_create(RANK_ACE, SUIT_HEARTS);
+    ai->player->hole_cards[0] = card_create(RANK_A, SUIT_SPADES);
+    ai->player->hole_cards[1] = card_create(RANK_A, SUIT_HEARTS);
     
     // Calculate preflop strength
     float strength = ai_calculate_hand_strength(ai, state);
     assert(strength > 0.8); // Pocket aces should be very strong
     
     // Add community cards - ace on flop for set
-    state->community_cards[0] = card_create(RANK_ACE, SUIT_DIAMONDS);
-    state->community_cards[1] = card_create(RANK_KING, SUIT_SPADES);
+    state->community_cards[0] = card_create(RANK_A, SUIT_DIAMONDS);
+    state->community_cards[1] = card_create(RANK_K, SUIT_SPADES);
     state->community_cards[2] = card_create(RANK_7, SUIT_CLUBS);
     state->stage = STAGE_FLOP;
     
@@ -125,16 +125,16 @@ static void test_decision_making_preflop(void) {
     state->pot = 30;
     
     // Test with premium hand
-    tight_ai->player->hole_cards[0] = card_create(RANK_ACE, SUIT_SPADES);
-    tight_ai->player->hole_cards[1] = card_create(RANK_ACE, SUIT_HEARTS);
+    tight_ai->player->hole_cards[0] = card_create(RANK_A, SUIT_SPADES);
+    tight_ai->player->hole_cards[1] = card_create(RANK_A, SUIT_HEARTS);
     
     AIDecision decision = ai_player_decide(tight_ai, state);
     assert(decision.action == ACTION_RAISE); // Should raise with AA
     assert(decision.amount > 20);
     
     // Test with marginal hand for loose player
-    loose_ai->player->hole_cards[0] = card_create(RANK_JACK, SUIT_SPADES);
-    loose_ai->player->hole_cards[1] = card_create(RANK_10, SUIT_HEARTS);
+    loose_ai->player->hole_cards[0] = card_create(RANK_J, SUIT_SPADES);
+    loose_ai->player->hole_cards[1] = card_create(RANK_T, SUIT_HEARTS);
     
     decision = ai_player_decide(loose_ai, state);
     assert(decision.action == ACTION_CALL || decision.action == ACTION_RAISE);
@@ -163,9 +163,9 @@ static void test_bluffing_behavior(void) {
     tricky_ai->player->hole_cards[1] = card_create(RANK_2, SUIT_DIAMONDS);
     
     // Scary board for bluffing
-    state->community_cards[0] = card_create(RANK_ACE, SUIT_SPADES);
-    state->community_cards[1] = card_create(RANK_ACE, SUIT_HEARTS);
-    state->community_cards[2] = card_create(RANK_KING, SUIT_SPADES);
+    state->community_cards[0] = card_create(RANK_A, SUIT_SPADES);
+    state->community_cards[1] = card_create(RANK_A, SUIT_HEARTS);
+    state->community_cards[2] = card_create(RANK_K, SUIT_SPADES);
     state->stage = STAGE_FLOP;
     
     state->pot = 200;
@@ -200,8 +200,8 @@ static void test_position_awareness(void) {
     AIPlayer* test_ai = (AIPlayer*)state->players[0]->ai_data;
     
     // Give marginal hand
-    test_ai->player->hole_cards[0] = card_create(RANK_KING, SUIT_HEARTS);
-    test_ai->player->hole_cards[1] = card_create(RANK_JACK, SUIT_SPADES);
+    test_ai->player->hole_cards[0] = card_create(RANK_K, SUIT_HEARTS);
+    test_ai->player->hole_cards[1] = card_create(RANK_J, SUIT_SPADES);
     
     state->current_bet = 20;
     state->pot = 30;
@@ -288,8 +288,8 @@ static void test_multi_way_pots(void) {
     }
     
     // Good but not great hand
-    ai->player->hole_cards[0] = card_create(RANK_QUEEN, SUIT_HEARTS);
-    ai->player->hole_cards[1] = card_create(RANK_QUEEN, SUIT_SPADES);
+    ai->player->hole_cards[0] = card_create(RANK_Q, SUIT_HEARTS);
+    ai->player->hole_cards[1] = card_create(RANK_Q, SUIT_SPADES);
     
     state->pot = 100;
     state->current_bet = 20;
@@ -320,22 +320,22 @@ static void test_learning_adaptation(void) {
     
     // Simulate losing with certain hands
     for (int i = 0; i < 10; i++) {
-        ai_record_hand_result(ai, RANK_JACK, RANK_10, SUITED, -50);
+        ai_record_hand_result(ai, RANK_J, RANK_T, SUITED, -50);
     }
     
     // AI should adjust evaluation of JTs
-    float jt_suited_value = ai_get_starting_hand_value(ai, RANK_JACK, RANK_10, SUITED);
-    float baseline_value = ai_get_starting_hand_value(ai, RANK_JACK, RANK_10, SUITED);
+    float jt_suited_value = ai_get_starting_hand_value(ai, RANK_J, RANK_T, SUITED);
+    float baseline_value = ai_get_starting_hand_value(ai, RANK_J, RANK_T, SUITED);
     
     // After losses, should value it less
     assert(jt_suited_value <= baseline_value);
     
     // Simulate winning with other hands
     for (int i = 0; i < 10; i++) {
-        ai_record_hand_result(ai, RANK_ACE, RANK_KING, SUITED, 100);
+        ai_record_hand_result(ai, RANK_A, RANK_K, SUITED, 100);
     }
     
-    float ak_suited_value = ai_get_starting_hand_value(ai, RANK_ACE, RANK_KING, SUITED);
+    float ak_suited_value = ai_get_starting_hand_value(ai, RANK_A, RANK_K, SUITED);
     assert(ak_suited_value > jt_suited_value); // Should strongly prefer AKs
     
     ai_player_destroy(ai);

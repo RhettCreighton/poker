@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.13)
 set(NETWORK_SOURCES
     src/protocol.c
     src/p2p_protocol.c
-    src/chattr_gossip.c
+    src/chattr_gossip_stub.c
     src/poker_log_protocol.c
     src/poker_log_protocol_phh.c
     src/crypto_utils.c

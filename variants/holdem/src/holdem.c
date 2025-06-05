@@ -205,16 +205,16 @@ static bool holdem_is_action_valid(GameState* game, int player_idx, PlayerAction
             return player->bet == game->current_bet;
             
         case ACTION_CALL:
-            return game->current_bet > player->bet && player->stack > 0;
+            return game->current_bet > player->bet && player->chips > 0;
             
         case ACTION_BET:
-            return game->current_bet == 0 && amount >= game->big_blind && amount <= player->stack;
+            return game->current_bet == 0 && amount >= game->big_blind && amount <= player->chips;
             
         case ACTION_RAISE:
-            return game->current_bet > 0 && amount >= game->min_raise && amount <= player->stack;
+            return game->current_bet > 0 && amount >= game->min_raise && amount <= player->chips;
             
         case ACTION_ALL_IN:
-            return player->stack > 0;
+            return player->chips > 0;
             
         default:
             return false;
@@ -239,11 +239,11 @@ static void holdem_apply_action(GameState* game, int player_idx, PlayerAction ac
         case ACTION_CALL:
             {
                 int64_t to_call = game->current_bet - player->bet;
-                if (to_call > player->stack) {
-                    to_call = player->stack;  // All-in
+                if (to_call > player->chips) {
+                    to_call = player->chips;  // All-in
                     player->state = PLAYER_STATE_ALL_IN;
                 }
-                player->stack -= to_call;
+                player->chips -= to_call;
                 player->bet += to_call;
                 player->total_bet += to_call;
                 game->pot += to_call;
@@ -258,12 +258,12 @@ static void holdem_apply_action(GameState* game, int player_idx, PlayerAction ac
                 }
                 
                 int64_t raise_amount = amount - player->bet;
-                if (raise_amount >= player->stack) {
-                    raise_amount = player->stack;
+                if (raise_amount >= player->chips) {
+                    raise_amount = player->chips;
                     player->state = PLAYER_STATE_ALL_IN;
                 }
                 
-                player->stack -= raise_amount;
+                player->chips -= raise_amount;
                 player->bet += raise_amount;
                 player->total_bet += raise_amount;
                 game->pot += raise_amount;
@@ -284,8 +284,8 @@ static void holdem_apply_action(GameState* game, int player_idx, PlayerAction ac
             
         case ACTION_ALL_IN:
             {
-                int64_t all_in_amount = player->stack;
-                player->stack = 0;
+                int64_t all_in_amount = player->chips;
+                player->chips = 0;
                 player->bet += all_in_amount;
                 player->total_bet += all_in_amount;
                 player->state = PLAYER_STATE_ALL_IN;
