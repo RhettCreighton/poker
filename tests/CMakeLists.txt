@@ -33,30 +33,30 @@ include_directories(
 # target_link_libraries(test_cards poker_common ${M_LIBRARY})
 # add_test(NAME test_cards COMMAND test_cards)
 
-# Deck tests - use fixed version
+# Deck tests
 add_executable(test_deck
-    test_deck_fixed.c
+    test_deck.c
 )
 target_link_libraries(test_deck poker_common ${M_LIBRARY})
 add_test(NAME test_deck COMMAND test_deck)
 
-# Hand evaluation tests - use fixed version
+# Hand evaluation tests
 add_executable(test_hand_eval
-    test_hand_eval_fixed.c
+    test_hand_eval.c
 )
 target_link_libraries(test_hand_eval poker_common ${M_LIBRARY} Threads::Threads)
 add_test(NAME test_hand_eval COMMAND test_hand_eval)
 
-# Game state tests - use fixed version
+# Game state tests
 add_executable(test_game_state
-    test_game_state_fixed.c
+    test_game_state.c
 )
 target_link_libraries(test_game_state poker_common ${M_LIBRARY})
 add_test(NAME test_game_state COMMAND test_game_state)
 
-# AI tests - use fixed version
+# AI tests
 add_executable(test_ai
-    test_ai_fixed.c
+    test_ai.c
 )
 target_link_libraries(test_ai poker_ai poker_common ${M_LIBRARY})
 add_test(NAME test_ai COMMAND test_ai)
@@ -71,8 +71,8 @@ if(BUILD_BENCHMARKS)
     add_subdirectory(benchmarks)
 endif()
 
-# P2P Network tests - use fixed version
-add_executable(test_p2p_network test_p2p_network_fixed.c)
+# P2P Network tests
+add_executable(test_p2p_network test_p2p_network.c)
 target_link_libraries(test_p2p_network
     poker_network
     poker_ai

@@ -20,7 +20,7 @@
 #include <notcurses/notcurses.h>
 #include "poker/cards.h"
 #include "poker/player.h"
-#include "variants/variant_interface.h"
+#include "variant_interface.h"
 
 // Card display sizes
 typedef enum {

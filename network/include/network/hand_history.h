@@ -57,7 +57,7 @@ typedef enum {
 typedef struct {
     uint8_t rank;  // 2-14 (2-9, T=10, J=11, Q=12, K=13, A=14)
     uint8_t suit;  // 0=clubs, 1=diamonds, 2=hearts, 3=spades
-} Card;
+} HHCard;  // Renamed to avoid conflict with common Card type
 
 typedef struct {
     uint8_t public_key[PLAYER_KEY_SIZE];
@@ -66,7 +66,7 @@ typedef struct {
     uint64_t stack_end;
     uint8_t seat_number;
     bool is_sitting_out;
-    Card hole_cards[7];  // Max for stud games
+    HHCard hole_cards[7];  // Max for stud games
     uint8_t num_hole_cards;
     bool cards_shown;
     uint64_t total_invested;
@@ -84,7 +84,7 @@ typedef struct {
     // For draw games
     uint8_t cards_discarded[5];
     uint8_t num_discarded;
-    Card new_cards[5];
+    HHCard new_cards[5];
     uint8_t num_drawn;
 } HandAction;
 
@@ -115,7 +115,7 @@ typedef struct {
     uint32_t num_actions;
     
     // Community cards
-    Card community_cards[5];
+    HHCard community_cards[5];
     uint8_t num_community_cards;
     
     // Results
@@ -248,7 +248,7 @@ void tournament_print_results(const TournamentHistory* th);
 const char* action_type_to_string(HandActionType action);
 const char* game_type_to_string(GameType game);
 const char* street_to_string(StreetType street);
-void card_to_string(const Card* card, char* str);
+void hh_card_to_string(const HHCard* card, char* str);
 void format_chip_amount(uint64_t amount, char* str);
 
 #endif

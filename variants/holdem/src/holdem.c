@@ -151,7 +151,7 @@ static void holdem_deal_initial(GameState* game) {
             
             if (player_is_active(player)) {
                 Card card = deck_deal(deck);
-                player_add_card(player, card, false);  // Face down
+                player_add_card(player, card);  // Hole cards in Hold'em are always private
             }
         }
     }
@@ -374,13 +374,13 @@ static void holdem_start_betting_round(GameState* game, BettingRound round) {
         int sb_seat = (game->dealer_button + 1) % game->num_players;
         Player* sb = &game->players[sb_seat];
         if (player_is_active(sb)) {
-            int64_t sb_amount = (game->small_blind < sb->stack) ? game->small_blind : sb->stack;
-            sb->stack -= sb_amount;
+            int64_t sb_amount = (game->small_blind < sb->chips) ? game->small_blind : sb->chips;
+            sb->chips -= sb_amount;
             sb->bet = sb_amount;
             sb->total_bet += sb_amount;
             game->pot += sb_amount;
             
-            if (sb->stack == 0) {
+            if (sb->chips == 0) {
                 sb->state = PLAYER_STATE_ALL_IN;
             }
         }
@@ -389,14 +389,14 @@ static void holdem_start_betting_round(GameState* game, BettingRound round) {
         int bb_seat = (game->dealer_button + 2) % game->num_players;
         Player* bb = &game->players[bb_seat];
         if (player_is_active(bb)) {
-            int64_t bb_amount = (game->big_blind < bb->stack) ? game->big_blind : bb->stack;
-            bb->stack -= bb_amount;
+            int64_t bb_amount = (game->big_blind < bb->chips) ? game->big_blind : bb->chips;
+            bb->chips -= bb_amount;
             bb->bet = bb_amount;
             bb->total_bet += bb_amount;
             game->pot += bb_amount;
             game->current_bet = bb_amount;
             
-            if (bb->stack == 0) {
+            if (bb->chips == 0) {
                 bb->state = PLAYER_STATE_ALL_IN;
             }
         }
@@ -436,7 +436,7 @@ static HandRank holdem_evaluate_hand(GameState* game, int player_idx) {
     }
     
     // Evaluate best 5-card hand from 7 cards
-    return hand_eval_7cards(all_cards);
+    return hand_eval_7(all_cards);
 }
 
 static int holdem_compare_hands(GameState* game, int player1, int player2) {
@@ -475,8 +475,8 @@ static void holdem_get_player_cards_string(GameState* game, int player_idx, char
     Player* player = &game->players[player_idx];
     char card1[8], card2[8];
     
-    card_get_display_string(player->hole_cards[0], card1, sizeof(card1));
-    card_get_display_string(player->hole_cards[1], card2, sizeof(card2));
+    card_to_string(player->hole_cards[0], card1, sizeof(card1));
+    card_to_string(player->hole_cards[1], card2, sizeof(card2));
     
     snprintf(buffer, size, "%s %s", card1, card2);
 }
@@ -490,7 +490,7 @@ static void holdem_get_board_string(GameState* game, char* buffer, size_t size) 
     char temp[64] = "";
     for (int i = 0; i < game->community_count; i++) {
         char card_str[8];
-        card_get_display_string(game->community_cards[i], card_str, sizeof(card_str));
+        card_to_string(game->community_cards[i], card_str, sizeof(card_str));
         
         if (i > 0) strcat(temp, " ");
         strcat(temp, card_str);

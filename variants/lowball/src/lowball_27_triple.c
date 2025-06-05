@@ -156,7 +156,7 @@ static void lowball_triple_deal_initial(GameState* game) {
             
             if (player_is_active(player)) {
                 Card dealt_card = deck_deal(deck);
-                player_add_card(player, dealt_card, false);  // All cards face down
+                player_add_card(player, dealt_card);  // All cards face down in draw games
             }
         }
     }
@@ -213,16 +213,16 @@ static bool lowball_triple_is_action_valid(GameState* game, int player_idx, Play
             return player->bet == game->current_bet;
             
         case ACTION_CALL:
-            return game->current_bet > player->bet && player->stack > 0;
+            return game->current_bet > player->bet && player->chips > 0;
             
         case ACTION_BET:
-            return game->current_bet == 0 && amount >= game->big_blind && amount <= player->stack;
+            return game->current_bet == 0 && amount >= game->big_blind && amount <= player->chips;
             
         case ACTION_RAISE:
-            return game->current_bet > 0 && amount >= game->min_raise && amount <= player->stack;
+            return game->current_bet > 0 && amount >= game->min_raise && amount <= player->chips;
             
         case ACTION_ALL_IN:
-            return player->stack > 0;
+            return player->chips > 0;
             
         default:
             return false;
@@ -253,11 +253,11 @@ static void lowball_triple_apply_action(GameState* game, int player_idx, PlayerA
         case ACTION_CALL:
             {
                 int64_t to_call = game->current_bet - player->bet;
-                if (to_call > player->stack) {
-                    to_call = player->stack;  // All-in
+                if (to_call > player->chips) {
+                    to_call = player->chips;  // All-in
                     player->state = PLAYER_STATE_ALL_IN;
                 }
-                player->stack -= to_call;
+                player->chips -= to_call;
                 player->bet += to_call;
                 player->total_bet += to_call;
                 game->pot += to_call;
@@ -272,12 +272,12 @@ static void lowball_triple_apply_action(GameState* game, int player_idx, PlayerA
                 }
                 
                 int64_t raise_amount = amount - player->bet;
-                if (raise_amount >= player->stack) {
-                    raise_amount = player->stack;
+                if (raise_amount >= player->chips) {
+                    raise_amount = player->chips;
                     player->state = PLAYER_STATE_ALL_IN;
                 }
                 
-                player->stack -= raise_amount;
+                player->chips -= raise_amount;
                 player->bet += raise_amount;
                 player->total_bet += raise_amount;
                 game->pot += raise_amount;
@@ -298,8 +298,8 @@ static void lowball_triple_apply_action(GameState* game, int player_idx, PlayerA
             
         case ACTION_ALL_IN:
             {
-                int64_t all_in_amount = player->stack;
-                player->stack = 0;
+                int64_t all_in_amount = player->chips;
+                player->chips = 0;
                 player->bet += all_in_amount;
                 player->total_bet += all_in_amount;
                 player->state = PLAYER_STATE_ALL_IN;
@@ -377,13 +377,13 @@ static void lowball_triple_start_betting_round(GameState* game, BettingRound rou
         int sb_seat = (game->dealer_button + 1) % game->max_players;
         Player* sb = &game->players[sb_seat];
         if (player_is_active(sb)) {
-            int64_t sb_amount = (game->small_blind < sb->stack) ? game->small_blind : sb->stack;
-            sb->stack -= sb_amount;
+            int64_t sb_amount = (game->small_blind < sb->chips) ? game->small_blind : sb->chips;
+            sb->chips -= sb_amount;
             sb->bet = sb_amount;
             sb->total_bet += sb_amount;
             game->pot += sb_amount;
             
-            if (sb->stack == 0) {
+            if (sb->chips == 0) {
                 sb->state = PLAYER_STATE_ALL_IN;
             }
         }
@@ -392,14 +392,14 @@ static void lowball_triple_start_betting_round(GameState* game, BettingRound rou
         int bb_seat = (game->dealer_button + 2) % game->max_players;
         Player* bb = &game->players[bb_seat];
         if (player_is_active(bb)) {
-            int64_t bb_amount = (game->big_blind < bb->stack) ? game->big_blind : bb->stack;
-            bb->stack -= bb_amount;
+            int64_t bb_amount = (game->big_blind < bb->chips) ? game->big_blind : bb->chips;
+            bb->chips -= bb_amount;
             bb->bet = bb_amount;
             bb->total_bet += bb_amount;
             game->pot += bb_amount;
             game->current_bet = bb_amount;
             
-            if (bb->stack == 0) {
+            if (bb->chips == 0) {
                 bb->state = PLAYER_STATE_ALL_IN;
             }
         }
@@ -554,7 +554,7 @@ static void lowball_triple_apply_draw(GameState* game, int player_idx, const int
         // Deal replacement cards
         for (int i = 0; i < count; i++) {
             Card new_card = deck_deal(deck);
-            player_add_card(player, new_card, false);
+            player_add_card(player, new_card);
         }
         
         state->draws_taken[player_idx]++;

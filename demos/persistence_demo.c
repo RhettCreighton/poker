@@ -16,11 +16,17 @@
 void demo_save_load_game(void) {
     printf("\n=== Save/Load Game Demo ===\n");
     
-    // Create a game
-    GameState* game = game_state_create(NULL, 6);
+    // Create a game (without variant for now, just testing persistence)
+    // TODO: Should pass a proper variant like TEXAS_HOLDEM_VARIANT
+    GameState* game = calloc(1, sizeof(GameState));
     if (!game) {
         printf("Failed to create game\n");
         return;
+    }
+    game->max_players = 6;
+    game->players = calloc(6, sizeof(Player));
+    for (int i = 0; i < 6; i++) {
+        player_init(&game->players[i]);
     }
     
     // Set up game parameters
@@ -108,7 +114,15 @@ void demo_autosave(void) {
     }
     
     // Create a game
-    GameState* game = game_state_create(NULL, 9);
+    // Create a game for auto-save demo
+    GameState* game = calloc(1, sizeof(GameState));
+    if (game) {
+        game->max_players = 9;
+        game->players = calloc(9, sizeof(Player));
+        for (int i = 0; i < 9; i++) {
+            player_init(&game->players[i]);
+        }
+    }
     if (!game) {
         printf("Failed to create game\n");
         autosave_destroy(autosave);

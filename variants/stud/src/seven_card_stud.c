@@ -44,8 +44,8 @@ static void stud_start_hand(GameState* game) {
     
     // Post antes
     for (int i = 0; i < game->num_players; i++) {
-        if (!game->players[i].is_folded) {
-            game->players[i].chips -= game->ante;
+        if (!player_has_folded(&game->players[i])) {
+            player_adjust_chips(&game->players[i], -game->ante);
             game->pot += game->ante;
         }
     }
@@ -72,7 +72,7 @@ static void stud_deal_initial(GameState* game) {
     // First hole card
     for (int i = 0; i < game->num_players; i++) {
         int deal_pos = (game->dealer_button + 1 + i) % game->num_players;
-        if (!game->players[deal_pos].is_folded) {
+        if (!player_has_folded(&game->players[deal_pos])) {
             state->player_cards[deal_pos][0] = deck_deal(deck);
             state->face_up[deal_pos][0] = false;
             state->cards_dealt[deal_pos] = 1;
@@ -82,7 +82,7 @@ static void stud_deal_initial(GameState* game) {
     // Second hole card
     for (int i = 0; i < game->num_players; i++) {
         int deal_pos = (game->dealer_button + 1 + i) % game->num_players;
-        if (!game->players[deal_pos].is_folded) {
+        if (!player_has_folded(&game->players[deal_pos])) {
             state->player_cards[deal_pos][1] = deck_deal(deck);
             state->face_up[deal_pos][1] = false;
             state->cards_dealt[deal_pos] = 2;
@@ -92,7 +92,7 @@ static void stud_deal_initial(GameState* game) {
     // Third street (first up card)
     for (int i = 0; i < game->num_players; i++) {
         int deal_pos = (game->dealer_button + 1 + i) % game->num_players;
-        if (!game->players[deal_pos].is_folded) {
+        if (!player_has_folded(&game->players[deal_pos])) {
             state->player_cards[deal_pos][2] = deck_deal(deck);
             state->face_up[deal_pos][2] = true;
             state->cards_dealt[deal_pos] = 3;
@@ -108,16 +108,16 @@ static void stud_deal_street(GameState* game, BettingRound round) {
     bool face_up = true;
     
     switch (round) {
-        case ROUND_TURN:
+        case ROUND_FOURTH_STREET:
             card_index = 3;
             break;
-        case ROUND_RIVER:
+        case ROUND_FIFTH_STREET:
             card_index = 4;
             break;
-        case ROUND_SHOWDOWN:
+        case ROUND_SIXTH_STREET:
             card_index = 5;
             break;
-        case ROUND_SHOWDOWN:
+        case ROUND_SEVENTH_STREET:
             card_index = 6;
             face_up = false; // River card is dealt face down
             break;
@@ -356,19 +356,19 @@ static void stud_end_betting_round(GameState* game) {
 static HandRank stud_evaluate_hand(GameState* game, int player) {
     StudState* state = (StudState*)game->variant_state;
     
-    if (game->players[player].is_folded || state->cards_dealt[player] < 5) {
+    if (player_has_folded(&game->players[player]) || state->cards_dealt[player] < 5) {
         return (HandRank){0};
     }
     
     // Evaluate best 5-card hand from 7 cards
     Card* cards = state->player_cards[player];
-    return hand_eval_7cards(cards);
+    return hand_eval_7(cards);
 }
 
 static int stud_compare_hands(GameState* game, int player1, int player2) {
     HandRank rank1 = stud_evaluate_hand(game, player1);
     HandRank rank2 = stud_evaluate_hand(game, player2);
-    return hand_rank_compare(rank1, rank2);
+    return hand_compare(rank1, rank2);
 }
 
 static void stud_get_best_hand(GameState* game, int player, Card* out_cards, int* out_count) {
@@ -426,11 +426,11 @@ static void stud_get_best_hand(GameState* game, int player, Card* out_cards, int
 
 static const char* stud_get_round_name(BettingRound round) {
     switch (round) {
-        case ROUND_FLOP: return "Third Street";
-        case ROUND_TURN: return "Fourth Street";
-        case ROUND_RIVER: return "Fifth Street";
-        case ROUND_SHOWDOWN: return "Sixth Street";
-        case ROUND_SHOWDOWN: return "Seventh Street";
+        case ROUND_THIRD_STREET: return "Third Street";
+        case ROUND_FOURTH_STREET: return "Fourth Street";
+        case ROUND_FIFTH_STREET: return "Fifth Street";
+        case ROUND_SIXTH_STREET: return "Sixth Street";
+        case ROUND_SEVENTH_STREET: return "Seventh Street";
         default: return "Unknown";
     }
 }

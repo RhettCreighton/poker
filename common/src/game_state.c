@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "poker/game_state.h"
 #include "variant_interface.h"
+#include "poker/game_state.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -96,23 +96,23 @@ void game_state_destroy(GameState* game) {
 }
 
 // Player management
-bool game_state_add_player(GameState* game, const char* name, int64_t buy_in) {
-    if (!game || !name || buy_in <= 0) return false;
+bool game_state_add_player(GameState* game, int seat, const char* name, int chips) {
+    if (!game || !name || chips <= 0 || seat < 0 || seat >= game->max_players) return false;
     
-    // Find empty seat
-    for (int i = 0; i < game->max_players; i++) {
-        if (game->players[i].state == PLAYER_STATE_EMPTY) {
-            Player* player = &game->players[i];
-            player_set_name(player, name);
-            player->stack = buy_in;
-            player->state = PLAYER_STATE_ACTIVE;
-            player->id = game->num_players + 1;
-            game->num_players++;
-            return true;
-        }
+    // Check if seat is available
+    if (game->players[seat].state != PLAYER_STATE_EMPTY) {
+        return false;
     }
     
-    return false;  // Table full
+    // Add player to specified seat
+    Player* player = &game->players[seat];
+    player_set_name(player, name);
+    player_set_chips(player, chips);
+    player->state = PLAYER_STATE_ACTIVE;
+    player->id = seat + 1;
+    player->seat_number = seat;
+    game->num_players++;
+    return true;
 }
 
 bool game_state_remove_player(GameState* game, int seat) {
@@ -336,7 +336,7 @@ void game_state_award_pot(GameState* game, const int* winners, int num_winners) 
         int64_t award = share;
         if (i < remainder) award++;  // Distribute remainder
         
-        winner->stack += award;
+        player_adjust_chips(winner, award);
         player_update_stats(winner, true, award);
     }
     

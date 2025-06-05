@@ -48,13 +48,13 @@ bool hand_history_add_player(HandHistory* hh, const uint8_t public_key[PLAYER_KE
     return true;
 }
 
-bool hand_history_set_hole_cards(HandHistory* hh, uint8_t seat, const Card* cards, 
+bool hand_history_set_hole_cards(HandHistory* hh, uint8_t seat, const HHCard** cards, 
                                 uint8_t num_cards) {
     if (!hh || !cards) return false;
     
     for (uint8_t i = 0; i < hh->num_players; i++) {
         if (hh->players[i].seat_number == seat) {
-            memcpy(hh->players[i].hole_cards, cards, sizeof(Card) * num_cards);
+            memcpy(hh->players[i].hole_cards, cards, sizeof(HHCard) * num_cards);
             hh->players[i].num_hole_cards = num_cards;
             return true;
         }
@@ -106,7 +106,7 @@ bool hand_history_record_action(HandHistory* hh, HandActionType action,
 
 bool hand_history_record_draw(HandHistory* hh, uint8_t seat, 
                              const uint8_t* discarded, uint8_t num_discarded,
-                             const Card* new_cards, uint8_t num_drawn) {
+                             const HHCard** new_cards, uint8_t num_drawn) {
     if (!hh || hh->num_actions >= MAX_ACTIONS_PER_HAND) return false;
     
     HandAction* act = &hh->actions[hh->num_actions];
@@ -120,7 +120,7 @@ bool hand_history_record_draw(HandHistory* hh, uint8_t seat,
     }
     
     if (new_cards && num_drawn > 0) {
-        memcpy(act->new_cards, new_cards, sizeof(Card) * num_drawn);
+        memcpy(act->new_cards, new_cards, sizeof(HHCard) * num_drawn);
         act->num_drawn = num_drawn;
     }
     
@@ -128,10 +128,10 @@ bool hand_history_record_draw(HandHistory* hh, uint8_t seat,
     return true;
 }
 
-void hand_history_set_community_cards(HandHistory* hh, const Card* cards, uint8_t count) {
+void hand_history_set_community_cards(HandHistory* hh, const HHCard** cards, uint8_t count) {
     if (!hh || !cards || count > 5) return;
     
-    memcpy(hh->community_cards, cards, sizeof(Card) * count);
+    memcpy(hh->community_cards, cards, sizeof(HHCard) * count);
     hh->num_community_cards = count;
 }
 
@@ -187,7 +187,7 @@ void hand_history_finalize(HandHistory* hh) {
     }
 }
 
-void card_to_string(const Card* card, char* str) {
+void hh_card_to_string(const HHCard** card, char* str) {
     if (!card || !str) return;
     sprintf(str, "%c%c", RANK_CHARS[card->rank - 2], SUIT_CHARS[card->suit]);
 }
@@ -279,7 +279,7 @@ void hand_history_print(const HandHistory* hh) {
             printf("Dealt to %s [", p->nickname);
             for (uint8_t j = 0; j < p->num_hole_cards; j++) {
                 char card_str[3];
-                card_to_string(&p->hole_cards[j], card_str);
+                hh_card_to_string(&p->hole_cards[j], card_str);
                 printf("%s%s", card_str, j < p->num_hole_cards - 1 ? " " : "");
             }
             printf("]\n");
@@ -300,7 +300,7 @@ void hand_history_print(const HandHistory* hh) {
                     printf("\n*** FLOP *** [");
                     for (uint8_t j = 0; j < 3; j++) {
                         char card_str[3];
-                        card_to_string(&hh->community_cards[j], card_str);
+                        hh_card_to_string(&hh->community_cards[j], card_str);
                         printf("%s%s", card_str, j < 2 ? " " : "");
                     }
                     printf("]\n");
@@ -308,7 +308,7 @@ void hand_history_print(const HandHistory* hh) {
                     printf("\n*** TURN *** [");
                     for (uint8_t j = 0; j < 4; j++) {
                         char card_str[3];
-                        card_to_string(&hh->community_cards[j], card_str);
+                        hh_card_to_string(&hh->community_cards[j], card_str);
                         printf("%s%s", card_str, j < 3 ? " " : "");
                     }
                     printf("]\n");
@@ -316,7 +316,7 @@ void hand_history_print(const HandHistory* hh) {
                     printf("\n*** RIVER *** [");
                     for (uint8_t j = 0; j < 5; j++) {
                         char card_str[3];
-                        card_to_string(&hh->community_cards[j], card_str);
+                        hh_card_to_string(&hh->community_cards[j], card_str);
                         printf("%s%s", card_str, j < 4 ? " " : "");
                     }
                     printf("]\n");
@@ -366,7 +366,7 @@ void hand_history_print(const HandHistory* hh) {
                 printf("%s shows [", p->nickname);
                 for (uint8_t j = 0; j < p->num_hole_cards; j++) {
                     char card_str[3];
-                    card_to_string(&p->hole_cards[j], card_str);
+                    hh_card_to_string(&p->hole_cards[j], card_str);
                     printf("%s%s", card_str, j < p->num_hole_cards - 1 ? " " : "");
                 }
                 printf("]\n");

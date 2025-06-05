@@ -90,9 +90,30 @@ bool player_add_card(Player* player, Card card) {
 void player_clear_cards(Player* player) {
     if (!player) return;
     
+    player->num_cards = 0;
     player->num_hole_cards = 0;
+    memset(player->cards, 0, sizeof(player->cards));
     memset(player->hole_cards, 0, sizeof(player->hole_cards));
     memset(player->card_face_up, 0, sizeof(player->card_face_up));
+}
+
+// Set player chips
+bool player_set_chips(Player* player, int chips) {
+    if (!player || chips < 0) return false;
+    
+    player->chips = chips;
+    return true;
+}
+
+// Adjust player chips (add or subtract)
+bool player_adjust_chips(Player* player, int delta) {
+    if (!player) return false;
+    
+    int new_chips = player->chips + delta;
+    if (new_chips < 0) return false;
+    
+    player->chips = new_chips;
+    return true;
 }
 
 // Get visible cards for display
@@ -207,12 +228,12 @@ void player_update_stats(Player* player, bool won, int64_t pot_size) {
 float player_get_vpip(const Player* player) {
     if (!player || player->stats.hands_played == 0) return 0.0f;
     
-    return (float)player->stats.vpip / player->stats.hands_played * 100.0f;
+    return (float)player->stats.hands_vpip / player->stats.hands_played * 100.0f;
 }
 
 // Get PFR percentage
 float player_get_pfr(const Player* player) {
     if (!player || player->stats.hands_played == 0) return 0.0f;
     
-    return (float)player->stats.pfr / player->stats.hands_played * 100.0f;
+    return (float)player->stats.hands_pfr / player->stats.hands_played * 100.0f;
 }

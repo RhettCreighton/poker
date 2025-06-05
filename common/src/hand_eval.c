@@ -215,7 +215,7 @@ static void init_flush_table(void) {
         if (straight) {
             // Straight flush or royal flush
             uint8_t high_card = (straight == 1) ? 5 : straight + 4;
-            HandType type = (high_card == RANK_ACE) ? HAND_ROYAL_FLUSH : HAND_STRAIGHT_FLUSH;
+            HandType type = (high_card == RANK_A) ? HAND_ROYAL_FLUSH : HAND_STRAIGHT_FLUSH;
             flush_table[mask] = encode_hand_value(type, high_card, 0, NULL);
         } else {
             // Regular flush
@@ -420,8 +420,12 @@ HandRank hand_eval_best(const Card* cards, int count) {
                             for (int i7 = i6 + 1; i7 < count; i7++) {
                                 hand[6] = cards[i7];
                                 HandRank rank = hand_eval_7cards(hand);
+                                uint8_t kickers[5] = {0};
+                                for (int k = 0; k < 5; k++) {
+                                    kickers[k] = (uint8_t)rank.kickers[k];
+                                }
                                 uint32_t value = encode_hand_value(rank.type, rank.primary,
-                                                                 rank.secondary, rank.kickers);
+                                                                 rank.secondary, kickers);
                                 if (value > best_value) {
                                     best_value = value;
                                 }
@@ -449,7 +453,7 @@ HandRank hand_eval_low_ace5(const Card cards[5]) {
     
     uint16_t ranks[4] = {0};
     for (int i = 0; i < 5; i++) {
-        int rank_bit = (cards[i].rank == RANK_ACE) ? 0 : cards[i].rank - 1;
+        int rank_bit = (cards[i].rank == RANK_A) ? 0 : cards[i].rank - 1;
         ranks[cards[i].suit] |= BIT(rank_bit);
     }
     
@@ -638,8 +642,12 @@ HandRank hand_eval_omaha(const Card hole[4], const Card community[5]) {
                         };
                         
                         HandRank rank = hand_eval_5cards(hand);
+                        uint8_t kickers[5] = {0};
+                        for (int k = 0; k < 5; k++) {
+                            kickers[k] = (uint8_t)rank.kickers[k];
+                        }
                         uint32_t value = encode_hand_value(rank.type, rank.primary,
-                                                         rank.secondary, rank.kickers);
+                                                         rank.secondary, kickers);
                         if (value > best_value) {
                             best_value = value;
                         }
@@ -674,7 +682,7 @@ HandRank hand_eval_omaha_hilo(const Card hole[4], const Card community[5],
                         // Check if all cards are 8 or lower
                         bool qualifies = true;
                         for (int i = 0; i < 5; i++) {
-                            if (hand[i].rank > 8 && hand[i].rank != RANK_ACE) {
+                            if (hand[i].rank > 8 && hand[i].rank != RANK_A) {
                                 qualifies = false;
                                 break;
                             }
@@ -682,8 +690,12 @@ HandRank hand_eval_omaha_hilo(const Card hole[4], const Card community[5],
                         
                         if (qualifies) {
                             HandRank low = hand_eval_low_ace5(hand);
+                            uint8_t kickers[5] = {0};
+                            for (int k = 0; k < 5; k++) {
+                                kickers[k] = (uint8_t)low.kickers[k];
+                            }
                             uint32_t value = encode_hand_value(low.type, low.primary,
-                                                             low.secondary, low.kickers);
+                                                             low.secondary, kickers);
                             if (value < best_low_value) {
                                 best_low_value = value;
                                 found_low = true;

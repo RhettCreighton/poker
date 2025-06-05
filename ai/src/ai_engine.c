@@ -67,7 +67,7 @@ AIPersonality ai_engine_get_random_personality(void) {
         return AI_PERSONALITY_LOOSE_AGGRESSIVE;
     } else {
         // 15% truly random
-        return ai_personality_create_random("Random AI");
+        return AI_PERSONALITY_RANDOM;
     }
 }
 

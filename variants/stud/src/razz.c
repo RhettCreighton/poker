@@ -108,16 +108,16 @@ static void razz_deal_street(GameState* game, BettingRound round) {
     bool face_up = true;
     
     switch (round) {
-        case ROUND_TURN:
+        case ROUND_FOURTH_STREET:
             card_index = 3;
             break;
-        case ROUND_RIVER:
+        case ROUND_FIFTH_STREET:
             card_index = 4;
             break;
-        case ROUND_SHOWDOWN:
+        case ROUND_SIXTH_STREET:
             card_index = 5;
             break;
-        case ROUND_SHOWDOWN:
+        case ROUND_SEVENTH_STREET:
             card_index = 6;
             face_up = false; // River card is dealt face down
             break;
@@ -536,11 +536,11 @@ static void razz_get_best_hand(GameState* game, int player, Card* out_cards, int
 
 static const char* razz_get_round_name(BettingRound round) {
     switch (round) {
-        case ROUND_FLOP: return "Third Street";
-        case ROUND_TURN: return "Fourth Street";
-        case ROUND_RIVER: return "Fifth Street";
-        case ROUND_SHOWDOWN: return "Sixth Street";
-        case ROUND_SHOWDOWN: return "Seventh Street";
+        case ROUND_THIRD_STREET: return "Third Street";
+        case ROUND_FOURTH_STREET: return "Fourth Street";
+        case ROUND_FIFTH_STREET: return "Fifth Street";
+        case ROUND_SIXTH_STREET: return "Sixth Street";
+        case ROUND_SEVENTH_STREET: return "Seventh Street";
         default: return "Unknown";
     }
 }

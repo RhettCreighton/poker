@@ -1,31 +1,20 @@
 # Common poker components library
 cmake_minimum_required(VERSION 3.13)
 
-# Find available source files
-set(COMMON_SOURCES "")
-
-# Check each expected source file
-foreach(SOURCE_FILE cards.c deck.c)
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/${SOURCE_FILE}")
-        list(APPEND COMMON_SOURCES "src/${SOURCE_FILE}")
-    else()
-        message(STATUS "Common library: ${SOURCE_FILE} not found, skipping")
-    endif()
-endforeach()
-
-# Use fixed/stub implementations
-list(APPEND COMMON_SOURCES "src/player_fixed.c" "src/game_state_fixed.c" "src/hand_eval_stub.c")
-
-# Add error handling and logging
-list(APPEND COMMON_SOURCES "src/error.c" "src/logger.c")
-
-# Add persistence layer
-list(APPEND COMMON_SOURCES "src/persistence.c" "src/autosave.c")
-
-# Ensure we have at least some source files
-if(NOT COMMON_SOURCES)
-    message(FATAL_ERROR "No source files found for poker_common library")
-endif()
+# Common source files
+set(COMMON_SOURCES
+    src/cards.c
+    src/deck.c
+    src/player.c
+    src/game_state.c
+    # src/game_manager.c  # Commented out - needs major refactoring to match current API
+    src/hand_eval.c
+    src/hand_eval_tables.c
+    src/error.c
+    src/logger.c
+    src/persistence.c
+    src/autosave.c
+)
 
 # Common library for shared poker components
 add_library(poker_common STATIC ${COMMON_SOURCES})

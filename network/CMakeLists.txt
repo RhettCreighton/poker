@@ -6,8 +6,8 @@ set(NETWORK_SOURCES
     src/protocol.c
     src/p2p_protocol.c
     src/chattr_gossip_stub.c
-    src/poker_log_protocol.c
-    src/poker_log_protocol_phh.c
+    # src/poker_log_protocol.c  # Needs refactoring for new API
+    # src/poker_log_protocol_phh.c  # Needs refactoring for new API
     src/crypto_utils.c
     src/network_simulation.c
     src/phh_parser.c
