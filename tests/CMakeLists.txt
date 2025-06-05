@@ -32,18 +32,33 @@ add_executable(test_cards
 target_link_libraries(test_cards poker_common ${M_LIBRARY})
 add_test(NAME test_cards COMMAND test_cards)
 
-# Add more tests as components are implemented
-# add_executable(test_deck
-#     unit/test_deck.c
-# )
-# target_link_libraries(test_deck poker_common ${M_LIBRARY})
-# add_test(NAME test_deck COMMAND test_deck)
+# Deck tests
+add_executable(test_deck
+    test_deck.c
+)
+target_link_libraries(test_deck poker_common ${M_LIBRARY})
+add_test(NAME test_deck COMMAND test_deck)
 
-# add_executable(test_hand_eval
-#     unit/test_hand_eval.c
-# )
-# target_link_libraries(test_hand_eval poker_common ${M_LIBRARY} Threads::Threads)
-# add_test(NAME test_hand_eval COMMAND test_hand_eval)
+# Hand evaluation tests
+add_executable(test_hand_eval
+    test_hand_eval.c
+)
+target_link_libraries(test_hand_eval poker_common ${M_LIBRARY} Threads::Threads)
+add_test(NAME test_hand_eval COMMAND test_hand_eval)
+
+# Game state tests
+add_executable(test_game_state
+    test_game_state.c
+)
+target_link_libraries(test_game_state poker_common ${M_LIBRARY})
+add_test(NAME test_game_state COMMAND test_game_state)
+
+# AI tests
+add_executable(test_ai
+    test_ai.c
+)
+target_link_libraries(test_ai poker_ai poker_common ${M_LIBRARY})
+add_test(NAME test_ai COMMAND test_ai)
 
 # Integration tests
 # if(BUILD_INTEGRATION_TESTS)
@@ -69,6 +84,6 @@ add_test(NAME test_p2p_network COMMAND test_p2p_network)
 # Custom test target that shows output
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS test_cards test_p2p_network
+    DEPENDS test_cards test_deck test_hand_eval test_game_state test_ai test_p2p_network
     COMMENT "Running tests..."
 )
