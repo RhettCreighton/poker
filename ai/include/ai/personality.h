@@ -146,7 +146,7 @@ void ai_show_emotion(const AIPersonality* personality, const AIState* state,
                     const char** out_text, const char** out_emote);
 
 // Personality creation and management
-AIPersonality* ai_create_random_personality(const char* name);
+AIPersonality* ai_personality_create_random(const char* name);
 AIPersonality* ai_create_custom_personality(const char* name, float* traits);
 void ai_destroy_personality(AIPersonality* personality);
 

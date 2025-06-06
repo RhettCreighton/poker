@@ -19,33 +19,31 @@
 } while(0)
 
 static void test_ai_player_creation(void) {
-    AIPlayer* ai = ai_player_create("TestBot", 1000, PERSONALITY_BALANCED);
+    AIPlayer* ai = ai_player_create("TestBot", AI_TYPE_TIGHT_AGGRESSIVE);
     assert(ai != NULL);
-    assert(ai->player != NULL);
-    assert(strcmp(ai->player->name, "TestBot") == 0);
-    assert(ai->player->chips == 1000);
-    assert(ai->personality == PERSONALITY_BALANCED);
+    assert(strcmp(ai->name, "TestBot") == 0);
+    assert(ai->type == AI_TYPE_TIGHT_AGGRESSIVE);
     
     ai_player_destroy(ai);
 }
 
 static void test_personality_types(void) {
-    // Test each personality type
-    PersonalityType types[] = {
-        PERSONALITY_AGGRESSIVE,
-        PERSONALITY_TIGHT,
-        PERSONALITY_LOOSE,
-        PERSONALITY_BALANCED,
-        PERSONALITY_TRICKY
+    // Test each AI type
+    AIPlayerType types[] = {
+        AI_TYPE_TIGHT_PASSIVE,
+        AI_TYPE_TIGHT_AGGRESSIVE,
+        AI_TYPE_LOOSE_PASSIVE,
+        AI_TYPE_LOOSE_AGGRESSIVE,
+        AI_TYPE_GTO
     };
     
     for (int i = 0; i < 5; i++) {
-        AIPlayer* ai = ai_player_create("Bot", 1000, types[i]);
+        AIPlayer* ai = ai_player_create("Bot", types[i]);
         assert(ai != NULL);
-        assert(ai->personality == types[i]);
+        assert(ai->type == types[i]);
         
         // Get personality traits
-        PersonalityTraits traits = personality_get_traits(types[i]);
+        PersonalityTraits traits = ai_player_get_personality(ai);
         
         // Verify traits are within valid ranges
         assert(traits.aggression >= 0.0 && traits.aggression <= 1.0);

@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+#define _GNU_SOURCE  // For strdup
+#define _XOPEN_SOURCE 700  // For wcwidth and struct timespec
 #include "ui/layout_interface.h"
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 // Render a fancy card with shadow
 void render_fancy_card(struct ncplane* n, int y, int x, Card card, bool face_down) {
@@ -50,9 +53,9 @@ void render_fancy_card(struct ncplane* n, int y, int x, Card card, bool face_dow
         
         // Rank and suit
         char rank_str[3];
-        const char* suit_str = suit_to_symbol(card.suit);
+        const wchar_t* suit_str = suit_to_unicode(card.suit);
         
-        if (card.rank == RANK_10) {
+        if (card.rank == RANK_T) {
             strcpy(rank_str, "10");
         } else {
             rank_str[0] = rank_to_char(card.rank);
@@ -70,7 +73,7 @@ void render_fancy_card(struct ncplane* n, int y, int x, Card card, bool face_dow
         ncplane_putstr_yx(n, y + 1, x + 1, rank_str);
         
         // Center suit
-        ncplane_putstr_yx(n, y + 2, x + 2, suit_str);
+        ncplane_putwstr_yx(n, y + 2, x + 2, suit_str);
     }
 }
 
@@ -212,12 +215,12 @@ void render_player_info_box(struct ncplane* n, int y, int x, const Player* playe
     
     // Stack
     ncplane_set_fg_rgb8(n, 0, 255, 0);
-    ncplane_printf_yx(n, y + 1, x, "$%-15ld", player->stack);
+    ncplane_printf_yx(n, y + 1, x, "$%-15d", player->chips);
     
     // Current bet
     if (player->bet > 0) {
         ncplane_set_fg_rgb8(n, 255, 255, 0);
-        ncplane_printf_yx(n, y + 2, x, "Bet: $%-10ld", player->bet);
+        ncplane_printf_yx(n, y + 2, x, "Bet: $%-10d", player->bet);
     }
 }
 

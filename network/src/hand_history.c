@@ -48,7 +48,7 @@ bool hand_history_add_player(HandHistory* hh, const uint8_t public_key[PLAYER_KE
     return true;
 }
 
-bool hand_history_set_hole_cards(HandHistory* hh, uint8_t seat, const HHCard** cards, 
+bool hand_history_set_hole_cards(HandHistory* hh, uint8_t seat, const HHCard* cards, 
                                 uint8_t num_cards) {
     if (!hh || !cards) return false;
     
@@ -106,7 +106,7 @@ bool hand_history_record_action(HandHistory* hh, HandActionType action,
 
 bool hand_history_record_draw(HandHistory* hh, uint8_t seat, 
                              const uint8_t* discarded, uint8_t num_discarded,
-                             const HHCard** new_cards, uint8_t num_drawn) {
+                             const HHCard* new_cards, uint8_t num_drawn) {
     if (!hh || hh->num_actions >= MAX_ACTIONS_PER_HAND) return false;
     
     HandAction* act = &hh->actions[hh->num_actions];
@@ -128,7 +128,7 @@ bool hand_history_record_draw(HandHistory* hh, uint8_t seat,
     return true;
 }
 
-void hand_history_set_community_cards(HandHistory* hh, const HHCard** cards, uint8_t count) {
+void hand_history_set_community_cards(HandHistory* hh, const HHCard* cards, uint8_t count) {
     if (!hh || !cards || count > 5) return;
     
     memcpy(hh->community_cards, cards, sizeof(HHCard) * count);
@@ -187,7 +187,7 @@ void hand_history_finalize(HandHistory* hh) {
     }
 }
 
-void hh_card_to_string(const HHCard** card, char* str) {
+void hh_card_to_string(const HHCard* card, char* str) {
     if (!card || !str) return;
     sprintf(str, "%c%c", RANK_CHARS[card->rank - 2], SUIT_CHARS[card->suit]);
 }
@@ -484,4 +484,22 @@ void tournament_print_results(const TournamentHistory* th) {
     }
     
     printf("\n");
+}
+
+// Replay hand history up to specified action
+bool hand_history_replay_to_action(const HandHistory* hh, uint32_t action_index,
+                                  void (*callback)(const HandHistory*, uint32_t, void*),
+                                  void* user_data) {
+    if (!hh || !callback) {
+        return false;
+    }
+    
+    // Replay actions up to the specified index
+    uint32_t max_action = (action_index >= hh->num_actions) ? hh->num_actions : action_index + 1;
+    
+    for (uint32_t i = 0; i < max_action; i++) {
+        callback(hh, i, user_data);
+    }
+    
+    return true;
 }

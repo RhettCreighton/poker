@@ -458,7 +458,7 @@ static int lowball_triple_compare_hands(GameState* game, int player1, int player
     HandRank rank2 = lowball_triple_evaluate_hand(game, player2);
     
     // In lowball, lower is better
-    return hand_compare_low(rank1, rank2);
+    return hand_compare_lowball(rank1, rank2);
 }
 
 static void lowball_triple_get_best_hand(GameState* game, int player_idx, Card* out_cards, int* out_count) {

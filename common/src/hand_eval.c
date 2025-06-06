@@ -36,9 +36,9 @@
 #define SEVEN_CARD_TABLE_SIZE 133784560  // C(52,7) combinations
 
 // Global lookup tables
-static uint16_t* flush_table = NULL;      // Maps rank bits to flush hand values
-static uint16_t* unique5_table = NULL;    // Maps 5 unique ranks to hand values
-static uint16_t* pairs_table = NULL;      // Maps rank patterns with pairs
+static uint32_t* flush_table = NULL;      // Maps rank bits to flush hand values
+static uint32_t* unique5_table = NULL;    // Maps 5 unique ranks to hand values
+static uint32_t* pairs_table = NULL;      // Maps rank patterns with pairs
 static uint8_t* bit_count_table = NULL;   // Population count for 16-bit values
 static uint8_t* straight_table = NULL;    // Straight detection table
 
@@ -70,8 +70,10 @@ static inline uint32_t encode_hand_value(HandType type, uint8_t primary,
     value |= ((uint32_t)secondary << SECONDARY_SHIFT);
     
     // Pack up to 5 kickers, 4 bits each
-    for (int i = 0; i < 5 && kickers[i] > 0; i++) {
-        value |= ((uint32_t)kickers[i] << (16 - i * 4));
+    if (kickers) {
+        for (int i = 0; i < 5 && kickers[i] > 0; i++) {
+            value |= ((uint32_t)kickers[i] << (16 - i * 4));
+        }
     }
     
     return value;
@@ -79,6 +81,7 @@ static inline uint32_t encode_hand_value(HandType type, uint8_t primary,
 
 static inline HandRank decode_hand_value(uint32_t value) {
     HandRank rank = {0};
+    rank.value = value;  // Store the raw value!
     rank.type = (HandType)((value & HAND_TYPE_MASK) >> HAND_TYPE_SHIFT);
     rank.primary = (value & PRIMARY_MASK) >> PRIMARY_SHIFT;
     rank.secondary = (value & SECONDARY_MASK) >> SECONDARY_SHIFT;
@@ -93,11 +96,7 @@ static inline HandRank decode_hand_value(uint32_t value) {
 
 // Population count for hand evaluation
 static inline int popcount(uint64_t x) {
-    if (bit_count_table) {
-        return bit_count_table[x & 0xFFFF] + bit_count_table[(x >> 16) & 0xFFFF] +
-               bit_count_table[(x >> 32) & 0xFFFF] + bit_count_table[(x >> 48) & 0xFFFF];
-    }
-    // Fallback to builtin
+    // Always use builtin to avoid circular dependency during init
     return __builtin_popcountll(x);
 }
 
@@ -118,8 +117,13 @@ static void extract_high_bits(uint64_t mask, uint8_t* out, int count) {
 
 // Initialize bit count lookup table
 static void init_bit_count_table(void) {
+    if (bit_count_table) return; // Already initialized
+    
     bit_count_table = malloc(65536 * sizeof(uint8_t));
-    if (!bit_count_table) return;
+    if (!bit_count_table) {
+        fprintf(stderr, "Failed to allocate bit_count_table\n");
+        exit(1);
+    }
     
     for (int i = 0; i < 65536; i++) {
         bit_count_table[i] = __builtin_popcount(i);
@@ -128,8 +132,13 @@ static void init_bit_count_table(void) {
 
 // Initialize straight detection table
 static void init_straight_table(void) {
+    if (straight_table) return; // Already initialized
+    
     straight_table = calloc(8192, sizeof(uint8_t));
-    if (!straight_table) return;
+    if (!straight_table) {
+        fprintf(stderr, "Failed to allocate straight_table\n");
+        exit(1);
+    }
     
     // All possible 5-card straights
     const uint16_t straights[] = {
@@ -158,11 +167,16 @@ static void init_straight_table(void) {
 
 // Initialize unique5 table for hands with 5 different ranks
 static void init_unique5_table(void) {
-    unique5_table = malloc(8192 * sizeof(uint16_t));
-    if (!unique5_table) return;
+    if (unique5_table) return; // Already initialized
+    
+    unique5_table = malloc(8192 * sizeof(uint32_t));
+    if (!unique5_table) {
+        fprintf(stderr, "Failed to allocate unique5_table\n");
+        exit(1);
+    }
     
     for (int mask = 0; mask < 8192; mask++) {
-        if (popcount(mask) != 5) {
+        if (__builtin_popcount(mask) != 5) {
             unique5_table[mask] = 0;
             continue;
         }
@@ -186,11 +200,19 @@ static void init_unique5_table(void) {
 
 // Initialize flush table
 static void init_flush_table(void) {
-    flush_table = malloc(8192 * sizeof(uint16_t));
-    if (!flush_table) return;
+    if (flush_table) return; // Already initialized
+    
+    flush_table = malloc(8192 * sizeof(uint32_t));
+    if (!flush_table) {
+        fprintf(stderr, "Failed to allocate flush_table\n");
+        exit(1);
+    }
+    
+    // Initialize all entries to 0
+    memset(flush_table, 0, 8192 * sizeof(uint32_t));
     
     for (int mask = 0; mask < 8192; mask++) {
-        int bits = popcount(mask);
+        int bits = __builtin_popcount(mask);
         if (bits < 5) {
             flush_table[mask] = 0;
             continue;
@@ -282,37 +304,50 @@ static uint32_t eval_pairs_hand(uint16_t ranks[4]) {
 
 // Core 5-card evaluation
 static uint32_t eval_5cards_internal(uint16_t ranks[4]) {
-    // Check for flush
+    // Check for flush first
     int flush_suit = -1;
     for (int suit = 0; suit < 4; suit++) {
-        if (popcount(ranks[suit]) >= 5) {
+        if (__builtin_popcount(ranks[suit]) >= 5) {
             flush_suit = suit;
             break;
         }
     }
     
     if (flush_suit >= 0) {
-        return flush_table[ranks[flush_suit]];
+        // We have a flush - check flush_table
+        uint16_t flush_ranks = ranks[flush_suit];
+        if (flush_table && flush_ranks < 8192) {
+            uint32_t val = flush_table[flush_ranks];
+            if (val != 0) return val;
+        }
+        // Fallback: create flush value manually
+        uint8_t top5[5] = {0};
+        extract_high_bits(flush_ranks, top5, 5);
+        for (int i = 0; i < 5; i++) top5[i] += 2;  // Convert to rank
+        return encode_hand_value(HAND_FLUSH, top5[0], top5[1], top5 + 2);
     }
     
     // Combine all ranks
     uint16_t all_ranks = ranks[0] | ranks[1] | ranks[2] | ranks[3];
+    int num_ranks = __builtin_popcount(all_ranks);
     
-    // Check for unique ranks (high card or straight)
-    if (popcount(all_ranks) >= 5) {
-        // Get top 5 unique ranks
-        uint16_t top5_mask = 0;
-        uint64_t temp = all_ranks;
-        for (int i = 0; i < 5; i++) {
-            int bit = highest_bit(temp);
-            top5_mask |= BIT(bit);
-            temp &= ~BIT(bit);
+    if (num_ranks == 5) {
+        // Exactly 5 different ranks - check for straight or high card
+        if (unique5_table && all_ranks < 8192) {
+            uint32_t val = unique5_table[all_ranks];
+            if (val != 0) return val;
         }
-        
-        uint32_t unique_val = unique5_table[top5_mask];
-        if ((unique_val >> HAND_TYPE_SHIFT) == HAND_STRAIGHT) {
-            return unique_val;  // Found a straight
+        // Fallback: check for straight manually
+        if (straight_table && all_ranks < 8192 && straight_table[all_ranks]) {
+            uint8_t high = straight_table[all_ranks] + 4;
+            if (straight_table[all_ranks] == 1) high = 5; // Wheel
+            return encode_hand_value(HAND_STRAIGHT, high, 0, NULL);
         }
+        // High card
+        uint8_t kickers[5] = {0};
+        extract_high_bits(all_ranks, kickers, 5);
+        for (int i = 0; i < 5; i++) kickers[i] += 2;  // Convert to rank
+        return encode_hand_value(HAND_HIGH_CARD, kickers[0], kickers[1], kickers + 2);
     }
     
     // Must have pairs, trips, or quads
@@ -626,6 +661,11 @@ int hand_compare_low(HandRank a, HandRank b) {
     return 0;
 }
 
+// Alias for compatibility
+int hand_compare_lowball(HandRank a, HandRank b) {
+    return hand_compare_low(a, b);
+}
+
 // Omaha evaluation
 HandRank hand_eval_omaha(const Card hole[4], const Card community[5]) {
     uint32_t best_value = 0;
@@ -848,6 +888,10 @@ HandEvalStats hand_eval_get_stats(void) {
 
 // Initialize all lookup tables
 bool hand_eval_init(void) {
+    // Check if already initialized
+    static bool initialized = false;
+    if (initialized) return true;
+    
     init_bit_count_table();
     init_straight_table();
     init_unique5_table();
@@ -855,6 +899,7 @@ bool hand_eval_init(void) {
     
     // Reset stats
     hand_eval_reset_stats();
+    initialized = true;
     return true;
 }
 
@@ -864,12 +909,19 @@ void hand_eval_cleanup(void) {
     free(straight_table);
     free(unique5_table);
     free(flush_table);
-    free(flush_table);
     free(seven_card_cache);
     
     bit_count_table = NULL;
     straight_table = NULL;
     unique5_table = NULL;
     flush_table = NULL;
-    seven_card_cache = NULL;
+}
+
+// Public API wrapper functions
+HandValue hand_eval_7(const Card cards[7]) {
+    return hand_eval_7cards(cards);
+}
+
+HandValue hand_eval_n(const Card* cards, int n) {
+    return hand_eval_best(cards, n);
 }

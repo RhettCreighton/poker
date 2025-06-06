@@ -9,9 +9,11 @@
 
 # Build and run
 ./build.sh
-./build/demos/poker_pixel_showcase      # Pixel demo (requires kitty/iTerm2/WezTerm)
-./build/demos/poker_animation_final     # Animation showcase
-./build/demos/poker_demo_27_lowball     # Classic character demo
+
+# Working programs:
+./build/src/main/simple_27_draw         # Simple 2-7 Triple Draw game
+./build/demos/error_logging_demo        # Error handling & logging demo
+./build/tests/test_simple               # Basic test suite
 ```
 
 ## 📁 Project Structure
@@ -72,12 +74,17 @@ animation_engine_add(engine, anim);
 animation_engine_update(engine, 20); // Update every 20ms
 ```
 
-## 📋 Available Demos
+## 📋 Available Programs
 
-1. **poker_pixel_showcase** - Shows all 52 cards with pixel rendering
-2. **poker_animation_final** - Complete game with smooth animations
-3. **poker_pixel_10player_professional** - Multi-player Texas Hold'em
-4. **poker_pixel_10player_lowball_v2** - 2-7 Triple Draw variant
+### Working:
+1. **simple_27_draw** - Playable 2-7 Triple Draw Lowball vs AI
+2. **error_logging_demo** - Demonstrates error handling and logging system
+3. **test_simple** - Basic test suite that passes
+
+### In Development:
+1. **poker_pixel_showcase** - Card rendering with pixel support (needs fixing)
+2. **poker_animation_final_pixel** - Animation system demo (needs fixing)
+3. **persistence_demo** - Save/load functionality (partially working)
 
 ## 🛠️ Development Tips
 
@@ -433,7 +440,16 @@ AIPlayer** table = ai_engine_create_table(6, 3, 8); // 6 players, skills 3-8
 - ✅ Auto-save manager with background thread
 - ✅ Player statistics tracking and persistence
 
+### Current State (2025-06-05)
+- ✅ **CMake build system fixed** - Now builds successfully
+- ✅ **Working demos** - simple_27_draw and error_logging_demo functional
+- ✅ **Core libraries build** - poker_common, variants, AI all compile
+- ⚠️ **GUI demos need work** - Pixel rendering demos have dependency issues
+- ⚠️ **Test suite partial** - Only test_simple passes, others need fixing
+- ❌ **Network simulation incomplete** - P2P functionality not finished
+
 ### Known Issues
-- Network simulation module needs completion
-- Some variant modules have compilation issues
-- Full CMake build doesn't complete (use fallback compilation)
+- Many tests segfault (likely hand_eval_init issue)
+- Pixel demos don't build (missing MVC view dependencies)
+- Persistence demo crashes during save
+- Some API mismatches between tests and current implementation

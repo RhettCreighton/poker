@@ -12,40 +12,7 @@
 
 // Helper to create a card from string like "AH", "2C", etc.
 Card parse_card(const char* str) {
-    Card card = {0};
-    
-    // Parse rank
-    switch (str[0]) {
-        case 'A': card.rank = RANK_A; break;
-        case 'K': card.rank = RANK_K; break;
-        case 'Q': card.rank = RANK_Q; break;
-        case 'J': card.rank = RANK_J; break;
-        case 'T': card.rank = RANK_T; break;
-        case '9': card.rank = RANK_9; break;
-        case '8': card.rank = RANK_8; break;
-        case '7': card.rank = RANK_7; break;
-        case '6': card.rank = RANK_6; break;
-        case '5': card.rank = RANK_5; break;
-        case '4': card.rank = RANK_4; break;
-        case '3': card.rank = RANK_3; break;
-        case '2': card.rank = RANK_2; break;
-        default:
-            fprintf(stderr, "Invalid rank: %c\n", str[0]);
-            exit(1);
-    }
-    
-    // Parse suit
-    switch (str[1]) {
-        case 'H': case 'h': card.suit = SUIT_HEARTS; break;
-        case 'D': case 'd': card.suit = SUIT_DIAMONDS; break;
-        case 'C': case 'c': card.suit = SUIT_CLUBS; break;
-        case 'S': case 's': card.suit = SUIT_SPADES; break;
-        default:
-            fprintf(stderr, "Invalid suit: %c\n", str[1]);
-            exit(1);
-    }
-    
-    return card;
+    return card_from_string(str);
 }
 
 void test_hand(const char* name, const char* cards[5]) {
@@ -167,7 +134,7 @@ void test_7card_combinations(void) {
         cards[i] = parse_card(multi_straight[i]);
     }
     
-    HandRank best = hand_eval_7cards(cards);
+    HandRank best = hand_eval_7(cards);
     assert(best.type == HAND_STRAIGHT);
     assert(best.primary == RANK_A); // Should find ace-high straight
     
@@ -178,7 +145,7 @@ void test_7card_combinations(void) {
         cards[i] = parse_card(flush_straight[i]);
     }
     
-    best = hand_eval_7cards(cards);
+    best = hand_eval_7(cards);
     assert(best.type == HAND_STRAIGHT_FLUSH);
     assert(best.primary == RANK_9); // 9-high straight flush
 }

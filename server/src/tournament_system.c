@@ -657,6 +657,7 @@ TournamentStats tournament_get_stats(const Tournament* tournament) {
     
     stats.tournament_id = tournament->tournament_id;
     strncpy(stats.tournament_name, tournament->config.name, sizeof(stats.tournament_name) - 1);
+    stats.tournament_name[sizeof(stats.tournament_name) - 1] = '\0';
     stats.total_entrants = tournament->num_registered;
     stats.unique_players = tournament->num_registered;
     stats.total_prize_pool = tournament->prize_pool;
@@ -677,6 +678,7 @@ TournamentStats tournament_get_stats(const Tournament* tournament) {
         if (tournament->players[i].elimination_place == 1) {
             strncpy(stats.winner_name, tournament->players[i].display_name,
                    sizeof(stats.winner_name) - 1);
+            stats.winner_name[sizeof(stats.winner_name) - 1] = '\0';
             stats.first_prize = tournament_get_payout(tournament, 1);
             break;
         }
@@ -760,6 +762,7 @@ void tournament_save_template(TournamentSystem* system, const char* template_nam
     TournamentConfig* new_template = &system->templates[system->num_templates];
     memcpy(new_template, config, sizeof(TournamentConfig));
     strncpy(new_template->name, template_name, sizeof(new_template->name) - 1);
+    new_template->name[sizeof(new_template->name) - 1] = '\0';
     system->num_templates++;
 }
 

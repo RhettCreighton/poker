@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define _GNU_SOURCE  // For usleep
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

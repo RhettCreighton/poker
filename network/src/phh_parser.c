@@ -8,6 +8,21 @@
 #include <ctype.h>
 #include <assert.h>
 
+// Helper to convert Card to HHCard
+static HHCard card_to_hhcard(const Card* card) {
+    HHCard hhcard;
+    hhcard.rank = card->rank;
+    hhcard.suit = card->suit;
+    return hhcard;
+}
+
+// Helper to convert Card array to HHCard array
+static void cards_to_hhcards(const Card* cards, HHCard* hhcards, uint8_t count) {
+    for (uint8_t i = 0; i < count; i++) {
+        hhcards[i] = card_to_hhcard(&cards[i]);
+    }
+}
+
 static const struct {
     const char* code;
     PHHVariant variant;
@@ -425,12 +440,19 @@ HandHistory* phh_to_hand_history(const PHHHand* phh) {
                 memcpy(current_hole_cards[action->player_index], action->cards, 
                        sizeof(Card) * action->num_cards);
                 hole_card_count[action->player_index] = action->num_cards;
+                
+                // Convert Card array to HHCard array
+                HHCard hhcards[7];
+                cards_to_hhcards(action->cards, hhcards, action->num_cards);
                 hand_history_set_hole_cards(hh, action->player_index, 
-                                          action->cards, action->num_cards);
+                                          hhcards, action->num_cards);
                 break;
                 
             case PHH_ACTION_DEAL_BOARD:
-                hand_history_set_community_cards(hh, action->cards, action->num_cards);
+                // Convert Card array to HHCard array
+                HHCard community_hhcards[5];
+                cards_to_hhcards(action->cards, community_hhcards, action->num_cards);
+                hand_history_set_community_cards(hh, community_hhcards, action->num_cards);
                 break;
                 
             case PHH_ACTION_FOLD:
@@ -462,8 +484,11 @@ HandHistory* phh_to_hand_history(const PHHHand* phh) {
                 
             case PHH_ACTION_STAND_DISCARD:
                 if (action->num_cards > 0) {
+                    // Convert Card array to HHCard array
+                    HHCard draw_hhcards[5];
+                    cards_to_hhcards(action->cards, draw_hhcards, action->num_cards);
                     hand_history_record_draw(hh, action->player_index, NULL, 
-                                           action->num_cards, action->cards, action->num_cards);
+                                           action->num_cards, draw_hhcards, action->num_cards);
                 } else {
                     hand_history_record_draw(hh, action->player_index, NULL, 0, NULL, 0);
                 }

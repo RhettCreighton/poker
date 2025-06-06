@@ -77,3 +77,20 @@ coverage.info
 
 # Assets cache
 assets/*.cache
+
+# Save files and game data
+saves/
+*.pgs
+*.pps
+
+# Test binaries and debug files
+test_*
+!test_*.c
+*_debug
+*_minimal
+*_simple
+*_working
+
+# Documentation build files
+TEST_FIXES_SUMMARY.md
+test_summary.md

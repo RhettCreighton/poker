@@ -19,12 +19,18 @@
 #include <string.h>
 #include <math.h>
 
+// Player position info
+typedef struct {
+    int y, x;
+} PlayerPosition;
+
 // Heads-up specific layout data
 typedef struct {
     int player1_card_y, player1_card_x;
     int player2_card_y, player2_card_x;
     int pot_y, pot_x;
     int community_y, community_x;
+    PlayerPosition player_positions[2];  // Store UI positions for players
 } HeadsUpData;
 
 // Forward declarations
@@ -95,18 +101,18 @@ static void headsup_calculate_positions(UIState* ui, Player* players, int count)
     HeadsUpData* data = (HeadsUpData*)ui->layout_data;
     
     // Player positions - facing each other
-    players[0].ui_y = ui->term_height - 10;
-    players[0].ui_x = ui->term_width / 2 - 15;
+    data->player_positions[0].y = ui->term_height - 10;
+    data->player_positions[0].x = ui->term_width / 2 - 15;
     
-    players[1].ui_y = 5;
-    players[1].ui_x = ui->term_width / 2 - 15;
+    data->player_positions[1].y = 5;
+    data->player_positions[1].x = ui->term_width / 2 - 15;
     
     // Card positions
-    data->player1_card_y = players[0].ui_y - 4;
-    data->player1_card_x = players[0].ui_x + 5;
+    data->player1_card_y = data->player_positions[0].y - 4;
+    data->player1_card_x = data->player_positions[0].x + 5;
     
-    data->player2_card_y = players[1].ui_y + 3;
-    data->player2_card_x = players[1].ui_x + 5;
+    data->player2_card_y = data->player_positions[1].y + 3;
+    data->player2_card_x = data->player_positions[1].x + 5;
     
     // Community cards and pot
     data->community_y = ui->term_height / 2;
@@ -177,8 +183,9 @@ static void headsup_render_table(UIState* ui) {
 static void headsup_render_player(UIState* ui, const Player* player, int seat) {
     if (!player || player->state == PLAYER_STATE_EMPTY) return;
     
-    int y = player->ui_y;
-    int x = player->ui_x;
+    HeadsUpData* data = (HeadsUpData*)ui->layout_data;
+    int y = data->player_positions[seat].y;
+    int x = data->player_positions[seat].x;
     
     // Player info box
     ncplane_set_bg_default(ui->std);
@@ -204,12 +211,12 @@ static void headsup_render_player(UIState* ui, const Player* player, int seat) {
     
     // Stack
     ncplane_set_fg_rgb8(ui->std, 0, 255, 0);
-    ncplane_printf_yx(ui->std, y + 1, x, "$%-10ld", player->stack);
+    ncplane_printf_yx(ui->std, y + 1, x, "$%-10d", player->chips);
     
     // Current bet
     if (player->bet > 0) {
         ncplane_set_fg_rgb8(ui->std, 255, 255, 0);
-        ncplane_printf(ui->std, " Bet: $%ld", player->bet);
+        ncplane_printf(ui->std, " Bet: $%d", player->bet);
     }
     
     // Status
@@ -278,12 +285,13 @@ static void headsup_render_dealer_button(UIState* ui, int dealer_seat) {
     const GameState* game = ui->game_state;
     if (!game || dealer_seat < 0 || dealer_seat >= 2) return;
     
-    const Player* dealer = &game->players[dealer_seat];
+    HeadsUpData* data = (HeadsUpData*)ui->layout_data;
     
     // Render dealer button next to player
     ncplane_set_bg_rgb8(ui->std, 255, 255, 255);
     ncplane_set_fg_rgb8(ui->std, 0, 0, 0);
-    ncplane_putstr_yx(ui->std, dealer->ui_y + 1, dealer->ui_x + 20, " D ");
+    ncplane_putstr_yx(ui->std, data->player_positions[dealer_seat].y + 1, 
+                      data->player_positions[dealer_seat].x + 20, " D ");
 }
 
 static void headsup_render_card(UIState* ui, int y, int x, Card card, bool face_down) {
@@ -336,9 +344,8 @@ static void headsup_start_chip_animation(UIState* ui, int from_seat, int64_t amo
     anim.data.chip_amount = amount;
     
     // Start from player
-    const Player* player = &game->players[from_seat];
-    anim.start_y = player->ui_y + 1;
-    anim.start_x = player->ui_x + 15;
+    anim.start_y = data->player_positions[from_seat].y + 1;
+    anim.start_x = data->player_positions[from_seat].x + 15;
     
     // End at pot
     anim.end_y = data->pot_y + 1;

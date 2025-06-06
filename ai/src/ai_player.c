@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define _GNU_SOURCE  // For strdup
 #include "ai/ai_player.h"
 #include "ai/personality.h"
 #include "poker/error.h"
@@ -124,7 +125,11 @@ void ai_player_set_personality(AIPlayer* player, const PersonalityTraits* traits
 void ai_player_randomize_personality(AIPlayer* player) {
     if (!player) return;
     
-    player->personality = ai_personality_create_random(player->name);
+    AIPersonality* random_personality = ai_personality_create_random(player->name);
+    if (random_personality) {
+        player->personality = *random_personality;
+        free(random_personality);
+    }
     player->risk_tolerance = player->personality.risk_tolerance;
     
     LOG_AI_DEBUG("Randomized personality for %s", player->name);
@@ -165,7 +170,7 @@ PlayerAction ai_player_decide_action(AIPlayer* player, const GameState* state,
     // Find our seat
     int our_seat = -1;
     for (int i = 0; i < state->num_players; i++) {
-        if (memcmp(player->player_id, state->players[i].id, P2P_NODE_ID_SIZE) == 0) {
+        if (player->seat_number == i) {
             our_seat = i;
             break;
         }
@@ -218,7 +223,7 @@ void ai_player_update_state(AIPlayer* player, const GameState* state) {
     // Update factors
     int our_seat = -1;
     for (int i = 0; i < state->num_players; i++) {
-        if (memcmp(player->player_id, state->players[i].id, P2P_NODE_ID_SIZE) == 0) {
+        if (player->seat_number == i) {
             our_seat = i;
             player->seat_number = i;
             break;
@@ -242,6 +247,7 @@ void ai_player_update_state(AIPlayer* player, const GameState* state) {
 void ai_player_observe_action(AIPlayer* player, uint8_t seat, 
                             PlayerAction action, int64_t amount) {
     if (!player || seat >= MAX_PLAYERS) return;
+    if (!player->current_game) return;  // Need game state to track opponents
     
     // Find or create opponent model
     OpponentModel* opponent = NULL;
@@ -299,7 +305,7 @@ float ai_evaluate_hand_strength(const AIPlayer* player, const GameState* state) 
     
     // Find our seat
     for (int i = 0; i < state->num_players; i++) {
-        if (memcmp(player->player_id, state->players[i].id, P2P_NODE_ID_SIZE) == 0) {
+        if (player->seat_number == i) {
             return ai_calculate_hand_strength(state, i);
         }
     }

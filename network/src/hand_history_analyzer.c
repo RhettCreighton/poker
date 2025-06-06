@@ -368,7 +368,7 @@ void analyzer_export_hand_json(const HandHistory* hh, const char* filename) {
         fprintf(fp, "      \"cards\": [");
         for (uint8_t j = 0; j < hh->players[i].num_hole_cards; j++) {
             char card_str[3];
-            card_to_string(&hh->players[i].hole_cards[j], card_str);
+            hh_card_to_string(&hh->players[i].hole_cards[j], card_str);
             fprintf(fp, "\"%s\"%s", card_str, 
                    j < hh->players[i].num_hole_cards - 1 ? ", " : "");
         }

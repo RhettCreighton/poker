@@ -42,6 +42,18 @@ const char* phh_variant_from_game_type(GameType game) {
     }
 }
 
+// Helper to format HHCard
+static void phh_format_hhcard(const HHCard* card, char* output) {
+    if (!card || !output) return;
+    
+    char rank = PHH_CARD_CHARS[card->rank - 2];
+    char suit = PHH_SUIT_CHARS[card->suit];
+    
+    output[0] = rank;
+    output[1] = suit;
+    output[2] = '\0';
+}
+
 void phh_format_card(const Card* card, char* output) {
     if (!card || !output) return;
     
@@ -51,6 +63,21 @@ void phh_format_card(const Card* card, char* output) {
     output[0] = rank;
     output[1] = suit;
     output[2] = '\0';
+}
+
+// Helper to format HHCard arrays
+static void phh_format_hhcards(const HHCard* cards, uint8_t count, char* output) {
+    if (!cards || !output || count == 0) {
+        output[0] = '\0';
+        return;
+    }
+    
+    char* p = output;
+    for (uint8_t i = 0; i < count; i++) {
+        phh_format_hhcard(&cards[i], p);
+        p += 2;
+    }
+    *p = '\0';
 }
 
 void phh_format_cards(const Card* cards, uint8_t count, char* output) {
@@ -99,7 +126,7 @@ void phh_format_action(const HandAction* action, uint8_t player_seat, char* outp
         case HAND_ACTION_DRAW:
             if (action->num_discarded > 0) {
                 char cards_str[32];
-                phh_format_cards(action->new_cards, action->num_drawn, cards_str);
+                phh_format_hhcards(action->new_cards, action->num_drawn, cards_str);
                 sprintf(output, "p%d sd %s", player_seat + 1, cards_str);
             } else {
                 sprintf(output, "p%d sd", player_seat + 1);  // Stand pat
@@ -164,7 +191,7 @@ bool phh_export_hand(const HandHistory* hh, FILE* fp) {
     for (uint8_t i = 0; i < hh->num_players; i++) {
         if (hh->players[i].num_hole_cards > 0) {
             char cards_str[32];
-            phh_format_cards(hh->players[i].hole_cards, 
+            phh_format_hhcards(hh->players[i].hole_cards, 
                            hh->players[i].num_hole_cards, cards_str);
             fprintf(fp, "  \"d dh p%d %s\",\n", i + 1, cards_str);
         }
@@ -194,7 +221,7 @@ bool phh_export_hand(const HandHistory* hh, FILE* fp) {
                 
                 if (cards_to_deal > 0) {
                     char cards_str[32];
-                    phh_format_cards(&hh->community_cards[community_dealt], 
+                    phh_format_hhcards(&hh->community_cards[community_dealt], 
                                    cards_to_deal, cards_str);
                     fprintf(fp, "  \"d db %s\",\n", cards_str);
                     community_dealt += cards_to_deal;
@@ -215,7 +242,7 @@ bool phh_export_hand(const HandHistory* hh, FILE* fp) {
     for (uint8_t i = 0; i < hh->num_players; i++) {
         if (hh->players[i].cards_shown && !hh->players[i].folded) {
             char cards_str[32];
-            phh_format_cards(hh->players[i].hole_cards, 
+            phh_format_hhcards(hh->players[i].hole_cards, 
                            hh->players[i].num_hole_cards, cards_str);
             fprintf(fp, "  \"p%d sm %s\",\n", i + 1, cards_str);
         }

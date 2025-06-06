@@ -6,6 +6,7 @@
 #include "poker/persistence.h"
 #include "poker/logger.h"
 #include "poker/error.h"
+#include "poker/deck.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +28,12 @@ void demo_save_load_game(void) {
     game->players = calloc(6, sizeof(Player));
     for (int i = 0; i < 6; i++) {
         player_init(&game->players[i]);
+    }
+    
+    // Initialize deck to prevent segfault
+    game->deck = malloc(sizeof(Deck));
+    if (game->deck) {
+        deck_init(game->deck);
     }
     
     // Set up game parameters
@@ -66,7 +73,10 @@ void demo_save_load_game(void) {
     }
     
     // Clean up original game
-    game_state_destroy(game);
+    // Note: We can't use game_state_destroy since we manually created the game
+    if (game->deck) free(game->deck);
+    if (game->players) free(game->players);
+    free(game);
     
     // Load the game back
     GameState* loaded_game = NULL;
@@ -113,20 +123,24 @@ void demo_autosave(void) {
         return;
     }
     
-    // Create a game
     // Create a game for auto-save demo
     GameState* game = calloc(1, sizeof(GameState));
-    if (game) {
-        game->max_players = 9;
-        game->players = calloc(9, sizeof(Player));
-        for (int i = 0; i < 9; i++) {
-            player_init(&game->players[i]);
-        }
-    }
     if (!game) {
         printf("Failed to create game\n");
         autosave_destroy(autosave);
         return;
+    }
+    
+    game->max_players = 9;
+    game->players = calloc(9, sizeof(Player));
+    for (int i = 0; i < 9; i++) {
+        player_init(&game->players[i]);
+    }
+    
+    // Initialize deck to prevent segfault
+    game->deck = malloc(sizeof(Deck));
+    if (game->deck) {
+        deck_init(game->deck);
     }
     
     // Set up game
@@ -170,7 +184,10 @@ void demo_autosave(void) {
     }
     
     // Clean up
-    game_state_destroy(game);
+    // Note: We can't use game_state_destroy since we manually created the game
+    if (game->deck) free(game->deck);
+    if (game->players) free(game->players);
+    free(game);
     autosave_destroy(autosave);
 }
 

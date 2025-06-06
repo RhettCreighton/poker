@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <time.h>
+#include "poker/cards.h"
 
 #define MAX_PLAYERS_PER_HAND 10
 #define MAX_ACTIONS_PER_HAND 200
@@ -194,7 +195,7 @@ void hand_history_destroy(HandHistory* hh);
 // Player management
 bool hand_history_add_player(HandHistory* hh, const uint8_t public_key[PLAYER_KEY_SIZE],
                             const char* nickname, uint8_t seat, uint64_t stack);
-bool hand_history_set_hole_cards(HandHistory* hh, uint8_t seat, const Card* cards, 
+bool hand_history_set_hole_cards(HandHistory* hh, uint8_t seat, const HHCard* cards, 
                                 uint8_t num_cards);
 
 // Action recording
@@ -202,10 +203,10 @@ bool hand_history_record_action(HandHistory* hh, HandActionType action,
                                uint8_t seat, uint64_t amount);
 bool hand_history_record_draw(HandHistory* hh, uint8_t seat, 
                              const uint8_t* discarded, uint8_t num_discarded,
-                             const Card* new_cards, uint8_t num_drawn);
+                             const HHCard* new_cards, uint8_t num_drawn);
 
 // Game progression
-void hand_history_set_community_cards(HandHistory* hh, const Card* cards, uint8_t count);
+void hand_history_set_community_cards(HandHistory* hh, const HHCard* cards, uint8_t count);
 void hand_history_advance_street(HandHistory* hh, StreetType new_street);
 void hand_history_create_side_pot(HandHistory* hh, uint64_t amount, 
                                  const uint8_t* eligible_players, uint8_t count);

@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
+#define _GNU_SOURCE  // For daemon()
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <time.h>
 #include "server/server.h"
 #include "poker/hand_eval.h"
 

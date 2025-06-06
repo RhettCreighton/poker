@@ -321,19 +321,20 @@ static void run_cash_game(const GameConfig* config) {
         
         // Award pot
         int winners[MAX_PLAYERS];
-        int num_winners = game_state_determine_winners(state, winners);
+        int num_winners;
+        game_state_determine_winners(state, winners, &num_winners);
         game_state_award_pot(state, winners, num_winners);
         
         // Remove broke players
         for (int i = state->num_players - 1; i >= 0; i--) {
-            if (state->players[i]->chips <= 0) {
-                printf("%s is eliminated!\n", state->players[i]->name);
+            if (state->players[i].chips <= 0) {
+                printf("%s is eliminated!\n", state->players[i].name);
                 game_state_remove_player(state, i);
             }
         }
         
-        // Check if human is still in
-        if (!state->players[0]->is_human) {
+        // Check if human is still in (human is always player 0)
+        if (state->num_players == 0 || state->players[0].ai_personality != 0) {
             printf("\nYou have been eliminated!\n");
             break;
         }

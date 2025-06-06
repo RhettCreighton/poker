@@ -25,6 +25,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O0 -DDEBUG")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -DNDEBUG")
 
+# Feature test macros for POSIX functions
+add_definitions(-D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L)
+
 # Export compile commands for tooling
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -81,6 +84,9 @@ endif()
 
 # Main executables
 add_subdirectory(src/main)
+
+# Demo programs
+add_subdirectory(demos)
 
 if(BUILD_TESTS)
     enable_testing()

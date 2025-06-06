@@ -60,6 +60,7 @@ GameState* game_state_create(const PokerVariant* variant, int max_players) {
     game->dealer_button = 0;
     game->hand_number = 0;
     game->hand_complete = true;
+    game->hand_in_progress = false;
     
     // Initialize all player seats
     for (int i = 0; i < max_players; i++) {
@@ -155,6 +156,7 @@ void game_state_start_hand(GameState* game) {
     }
     
     game->hand_complete = false;
+    game->hand_in_progress = true;
     
     // Deal initial cards
     if (game->variant->deal_initial) {
@@ -188,6 +190,10 @@ void game_state_end_hand(GameState* game) {
         game->variant->end_hand(game);
     }
     
+    // Mark hand as complete
+    game->hand_complete = true;
+    game->hand_in_progress = false;
+    
     // Advance dealer button
     game_state_advance_dealer_button(game);
 }
@@ -219,6 +225,76 @@ bool game_state_apply_action(GameState* game, int player, PlayerAction action, i
     game_state_advance_action(game);
     
     return true;
+}
+
+int game_state_next_active_player(const GameState* game, int from_seat) {
+    if (!game) return -1;
+    
+    for (int i = 1; i <= game->max_players; i++) {
+        int seat = (from_seat + i) % game->max_players;
+        if (game->players[seat].state == PLAYER_STATE_ACTIVE) {
+            return seat;
+        }
+    }
+    
+    return -1;
+}
+
+void game_state_advance_round(GameState* game) {
+    if (!game || !game->variant) return;
+    
+    // Default round advancement for Hold'em style games
+    switch (game->current_round) {
+        case ROUND_PREFLOP:
+            game->current_round = ROUND_FLOP;
+            // Deal flop using variant or default
+            if (game->variant->deal_street) {
+                game->variant->deal_street(game, ROUND_FLOP);
+            } else {
+                for (int i = 0; i < 3; i++) {
+                    game->community_cards[i] = deck_deal(game->deck);
+                }
+                game->community_count = 3;
+            }
+            break;
+        case ROUND_FLOP:
+            game->current_round = ROUND_TURN;
+            // Deal turn
+            if (game->variant->deal_street) {
+                game->variant->deal_street(game, ROUND_TURN);
+            } else {
+                game->community_cards[3] = deck_deal(game->deck);
+                game->community_count = 4;
+            }
+            break;
+        case ROUND_TURN:
+            game->current_round = ROUND_RIVER;
+            // Deal river
+            if (game->variant->deal_street) {
+                game->variant->deal_street(game, ROUND_RIVER);
+            } else {
+                game->community_cards[4] = deck_deal(game->deck);
+                game->community_count = 5;
+            }
+            break;
+        case ROUND_RIVER:
+            game->current_round = ROUND_SHOWDOWN;
+            break;
+        default:
+            // For other variants, just advance the round
+            game->current_round++;
+            break;
+    }
+    
+    // Reset betting for new round
+    for (int i = 0; i < game->max_players; i++) {
+        game->players[i].bet = 0;
+    }
+    game->current_bet = 0;
+    game->min_raise = game->big_blind;
+    
+    // Set action to first active player after button
+    game->action_on = game_state_next_active_player(game, game->dealer_button);
 }
 
 void game_state_advance_action(GameState* game) {
@@ -378,6 +454,166 @@ int game_state_get_next_to_act(const GameState* game) {
     return -1;
 }
 
+// Process player action
+bool game_state_process_action(GameState* game, PlayerAction action, int amount) {
+    if (!game || !game->hand_in_progress || game->action_on < 0) {
+        return false;
+    }
+    
+    Player* player = &game->players[game->action_on];
+    if (!player_can_act(player)) {
+        return false;
+    }
+    
+    bool valid = false;
+    
+    switch (action) {
+        case ACTION_FOLD:
+            player->state = PLAYER_STATE_FOLDED;
+            player->is_folded = true;
+            valid = true;
+            break;
+            
+        case ACTION_CHECK:
+            if (player->bet == game->current_bet) {
+                valid = true;
+            }
+            break;
+            
+        case ACTION_CALL:
+            if (player->bet < game->current_bet) {
+                int call_amount = game->current_bet - player->bet;
+                if (call_amount > player->chips) {
+                    // All-in
+                    player->bet += player->chips;
+                    game->pot += player->chips;
+                    player->chips = 0;
+                    player->state = PLAYER_STATE_ALL_IN;
+                } else {
+                    player->bet += call_amount;
+                    player->chips -= call_amount;
+                    game->pot += call_amount;
+                }
+                valid = true;
+            }
+            break;
+            
+        case ACTION_BET:
+        case ACTION_RAISE:
+            if (amount >= game->min_raise || amount == player->chips) {
+                int total_bet = (action == ACTION_BET) ? amount : game->current_bet + amount;
+                int bet_amount = total_bet - player->bet;
+                
+                if (bet_amount >= player->chips) {
+                    // All-in
+                    player->bet += player->chips;
+                    game->pot += player->chips;
+                    player->chips = 0;
+                    player->state = PLAYER_STATE_ALL_IN;
+                } else {
+                    player->bet = total_bet;
+                    player->chips -= bet_amount;
+                    game->pot += bet_amount;
+                    game->current_bet = total_bet;
+                    game->min_raise = amount;
+                }
+                game->last_aggressor = game->action_on;
+                valid = true;
+            }
+            break;
+            
+        case ACTION_ALL_IN:
+            player->bet += player->chips;
+            game->pot += player->chips;
+            if (player->bet > game->current_bet) {
+                game->current_bet = player->bet;
+            }
+            player->chips = 0;
+            player->state = PLAYER_STATE_ALL_IN;
+            valid = true;
+            break;
+    }
+    
+    if (valid) {
+        // Advance to next player
+        game_state_advance_action(game);
+        
+        // Check if betting is complete
+        if (game_state_is_betting_complete(game)) {
+            game_state_advance_round(game);
+        }
+    }
+    
+    return valid;
+}
+
+// Calculate side pots for all-in situations
+void game_state_calculate_side_pots(GameState* game) {
+    if (!game) return;
+    
+    // Reset side pots
+    game->num_side_pots = 0;
+    
+    // Get all bet amounts
+    int bets[MAX_GAME_PLAYERS];
+    int num_bets = 0;
+    
+    for (int i = 0; i < game->max_players; i++) {
+        if (game->players[i].state != PLAYER_STATE_EMPTY && 
+            game->players[i].bet > 0) {
+            bets[num_bets++] = game->players[i].bet;
+        }
+    }
+    
+    if (num_bets == 0) return;
+    
+    // Sort bets
+    for (int i = 0; i < num_bets - 1; i++) {
+        for (int j = i + 1; j < num_bets; j++) {
+            if (bets[i] > bets[j]) {
+                int temp = bets[i];
+                bets[i] = bets[j];
+                bets[j] = temp;
+            }
+        }
+    }
+    
+    // Remove duplicates
+    int unique_bets[MAX_GAME_PLAYERS];
+    int num_unique = 0;
+    for (int i = 0; i < num_bets; i++) {
+        if (i == 0 || bets[i] != bets[i-1]) {
+            unique_bets[num_unique++] = bets[i];
+        }
+    }
+    
+    // Create side pots
+    int previous_bet = 0;
+    for (int i = 0; i < num_unique && game->num_side_pots < MAX_SIDE_POTS; i++) {
+        int current_bet_level = unique_bets[i];
+        int pot_amount = 0;
+        int num_eligible = 0;
+        
+        for (int j = 0; j < game->max_players; j++) {
+            if (game->players[j].state != PLAYER_STATE_EMPTY &&
+                game->players[j].bet >= current_bet_level) {
+                pot_amount += (current_bet_level - previous_bet);
+                if (!game->players[j].is_folded) {
+                    game->side_pots[game->num_side_pots].eligible_players[num_eligible++] = j;
+                }
+            }
+        }
+        
+        if (pot_amount > 0 && num_eligible > 0) {
+            game->side_pots[game->num_side_pots].amount = pot_amount;
+            game->side_pots[game->num_side_pots].num_eligible = num_eligible;
+            game->num_side_pots++;
+        }
+        
+        previous_bet = current_bet_level;
+    }
+}
+
 // Display helpers
 void game_state_get_status_string(const GameState* game, char* buffer, size_t size) {
     if (!game || !buffer) return;
@@ -387,6 +623,6 @@ void game_state_get_status_string(const GameState* game, char* buffer, size_t si
         round_name = game->variant->get_round_name(game->current_round);
     }
     
-    snprintf(buffer, size, "Hand #%lu - %s - Pot: $%ld", 
+    snprintf(buffer, size, "Hand #%d - %s - Pot: $%d", 
              game->hand_number, round_name, game->pot);
 }

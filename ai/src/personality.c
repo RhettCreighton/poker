@@ -14,7 +14,7 @@
 // Predefined personalities
 const AIPersonality AI_PERSONALITY_TIGHT_PASSIVE = {
     .name = "Rock",
-    .type = AI_TYPE_TIGHT_PASSIVE,
+    .type = 1,  // AI_TYPE_TIGHT_PASSIVE
     .vpip_target = 0.15,
     .pfr_target = 0.10,
     .aggression = 0.3,
@@ -41,7 +41,7 @@ const AIPersonality AI_PERSONALITY_TIGHT_PASSIVE = {
 
 const AIPersonality AI_PERSONALITY_TIGHT_AGGRESSIVE = {
     .name = "Shark",
-    .type = AI_TYPE_TIGHT_AGGRESSIVE,
+    .type = 2,  // AI_TYPE_TIGHT_AGGRESSIVE
     .vpip_target = 0.20,
     .pfr_target = 0.18,
     .aggression = 0.8,
@@ -68,7 +68,7 @@ const AIPersonality AI_PERSONALITY_TIGHT_AGGRESSIVE = {
 
 const AIPersonality AI_PERSONALITY_LOOSE_PASSIVE = {
     .name = "Fish",
-    .type = AI_TYPE_LOOSE_PASSIVE,
+    .type = 3,  // AI_TYPE_LOOSE_PASSIVE
     .vpip_target = 0.40,
     .pfr_target = 0.15,
     .aggression = 0.2,
@@ -95,7 +95,7 @@ const AIPersonality AI_PERSONALITY_LOOSE_PASSIVE = {
 
 const AIPersonality AI_PERSONALITY_LOOSE_AGGRESSIVE = {
     .name = "Maniac",
-    .type = AI_TYPE_LOOSE_AGGRESSIVE,
+    .type = 4,  // AI_TYPE_LOOSE_AGGRESSIVE
     .vpip_target = 0.35,
     .pfr_target = 0.28,
     .aggression = 0.9,
@@ -122,7 +122,7 @@ const AIPersonality AI_PERSONALITY_LOOSE_AGGRESSIVE = {
 
 const AIPersonality AI_PERSONALITY_RANDOM = {
     .name = "Chaos",
-    .type = AI_TYPE_RANDOM,
+    .type = 0,  // AI_TYPE_RANDOM
     .vpip_target = 0.50,
     .pfr_target = 0.25,
     .aggression = 0.5,
@@ -148,30 +148,33 @@ const AIPersonality AI_PERSONALITY_RANDOM = {
 };
 
 // Create custom personality
-AIPersonality ai_personality_create(const char* name, AIPersonalityType type) {
+AIPersonality* ai_personality_create_random(const char* name) {
     AIPersonality personality = AI_PERSONALITY_TIGHT_PASSIVE;  // Default
     
     if (name) {
         strncpy(personality.name, name, sizeof(personality.name) - 1);
     }
     
-    personality.type = type;
+    // personality.type will be set by the chosen personality below
     
-    // Set defaults based on type
-    switch (type) {
-        case AI_TYPE_TIGHT_PASSIVE:
+    // Choose random personality type
+    int random_type = rand() % 5;
+    
+    // Set defaults based on random type
+    switch (random_type) {
+        case 1:  // AI_TYPE_TIGHT_PASSIVE
             personality = AI_PERSONALITY_TIGHT_PASSIVE;
             break;
-        case AI_TYPE_TIGHT_AGGRESSIVE:
+        case 2:  // AI_TYPE_TIGHT_AGGRESSIVE
             personality = AI_PERSONALITY_TIGHT_AGGRESSIVE;
             break;
-        case AI_TYPE_LOOSE_PASSIVE:
+        case 3:  // AI_TYPE_LOOSE_PASSIVE
             personality = AI_PERSONALITY_LOOSE_PASSIVE;
             break;
-        case AI_TYPE_LOOSE_AGGRESSIVE:
+        case 4:  // AI_TYPE_LOOSE_AGGRESSIVE
             personality = AI_PERSONALITY_LOOSE_AGGRESSIVE;
             break;
-        case AI_TYPE_RANDOM:
+        case 0:  // AI_TYPE_RANDOM
         default:
             personality = AI_PERSONALITY_RANDOM;
             break;
@@ -181,49 +184,31 @@ AIPersonality ai_personality_create(const char* name, AIPersonalityType type) {
         strncpy(personality.name, name, sizeof(personality.name) - 1);
     }
     
-    return personality;
+    AIPersonality* result = malloc(sizeof(AIPersonality));
+    if (result) {
+        *result = personality;
+    }
+    return result;
 }
 
 // Get personality by type
-AIPersonality ai_personality_get_by_type(AIPersonalityType type) {
+AIPersonality ai_personality_get_by_type(int type) {
     switch (type) {
-        case AI_TYPE_TIGHT_PASSIVE:
+        case 1:  // AI_TYPE_TIGHT_PASSIVE
             return AI_PERSONALITY_TIGHT_PASSIVE;
-        case AI_TYPE_TIGHT_AGGRESSIVE:
+        case 2:  // AI_TYPE_TIGHT_AGGRESSIVE
             return AI_PERSONALITY_TIGHT_AGGRESSIVE;
-        case AI_TYPE_LOOSE_PASSIVE:
+        case 3:  // AI_TYPE_LOOSE_PASSIVE
             return AI_PERSONALITY_LOOSE_PASSIVE;
-        case AI_TYPE_LOOSE_AGGRESSIVE:
+        case 4:  // AI_TYPE_LOOSE_AGGRESSIVE
             return AI_PERSONALITY_LOOSE_AGGRESSIVE;
-        case AI_TYPE_RANDOM:
+        case 0:  // AI_TYPE_RANDOM
         default:
             return AI_PERSONALITY_RANDOM;
     }
 }
 
-// Create random personality
-AIPersonality ai_personality_create_random(const char* name) {
-    AIPersonality personality;
-    
-    if (name) {
-        strncpy(personality.name, name, sizeof(personality.name) - 1);
-    } else {
-        strcpy(personality.name, "Random AI");
-    }
-    
-    personality.type = AI_TYPE_RANDOM;
-    personality.vpip_target = 0.1 + (double)rand() / RAND_MAX * 0.4;
-    personality.pfr_target = personality.vpip_target * (0.5 + (double)rand() / RAND_MAX * 0.4);
-    personality.aggression = (double)rand() / RAND_MAX;
-    personality.bluff_frequency = (double)rand() / RAND_MAX * 0.3;
-    personality.tilt_factor = (double)rand() / RAND_MAX;
-    personality.risk_tolerance = (double)rand() / RAND_MAX;
-    personality.adaptation_rate = (double)rand() / RAND_MAX * 0.3;
-    personality.hand_memory = rand() % 100;
-    personality.emotional_control = (double)rand() / RAND_MAX;
-    
-    return personality;
-}
+// This function is already defined above with proper return type
 
 // Update personality based on results
 void ai_personality_adapt(AIPersonality* personality, const AIDecisionResult* result) {
@@ -318,7 +303,7 @@ float ai_calculate_hand_strength(const GameState* game, int player_index) {
     }
     
     // Connectedness bonus
-    int gap = abs(card1.rank - card2.rank);
+    int gap = abs((int)card1.rank - (int)card2.rank);
     if (gap == 1) score += 3.0f;       // Connected
     else if (gap == 2) score += 2.0f;  // One gap
     else if (gap == 3) score += 1.0f;  // Two gaps
@@ -367,7 +352,7 @@ float ai_calculate_hand_strength(const GameState* game, int player_index) {
     // Adjust for number of active players
     int active_players = 0;
     for (int i = 0; i < game->num_players; i++) {
-        if (!game->players[i].folded && game->players[i].chips > 0) {
+        if (!game->players[i].is_folded && game->players[i].chips > 0) {
             active_players++;
         }
     }
@@ -404,7 +389,7 @@ float ai_calculate_implied_odds(const GameState* game, int player_index) {
     int active_opponents = 0;
     
     for (int i = 0; i < game->num_players; i++) {
-        if (i != player_index && !game->players[i].folded && game->players[i].chips > 0) {
+        if (i != player_index && !game->players[i].is_folded && game->players[i].chips > 0) {
             total_opponent_chips += game->players[i].chips;
             active_opponents++;
         }
@@ -419,9 +404,9 @@ float ai_calculate_implied_odds(const GameState* game, int player_index) {
     return streets_left * (avg_stack / (big_blind * 20.0f)) * 0.3f;
 }
 
-// Update opponent model based on observed actions
-void ai_update_opponent_model(AIState* state, int opponent, 
-                             PlayerAction action, int64_t amount) {
+// Update opponent model based on observed actions (internal use)
+static void ai_state_update_opponent_model(AIState* state, int opponent, 
+                                          PlayerAction action, int64_t amount) {
     if (!state || opponent < 0 || opponent >= MAX_PLAYERS) return;
     
     state->opponent_hands_seen[opponent]++;
@@ -459,7 +444,7 @@ AIDecision ai_make_decision(const GameState* game, int player_index,
     }
     
     Player* player = &game->players[player_index];
-    if (player->folded || player->chips <= 0) {
+    if (player->is_folded || player->chips <= 0) {
         return decision;
     }
     
@@ -503,7 +488,7 @@ AIDecision ai_make_decision(const GameState* game, int player_index,
     // Check if we can check
     bool can_check = (call_amount == 0);
     
-    if (personality->type == AI_TYPE_RANDOM) {
+    if (personality->type == 0) {  // AI_TYPE_RANDOM
         // Random player makes random decisions
         float r = random_factor;
         if (r < 0.2f) {
@@ -646,7 +631,7 @@ float ai_position_modifier(const GameState* game, int player_index) {
     int active_after = 0;
     
     for (int i = 0; i < game->num_players; i++) {
-        if (!game->players[i].folded && game->players[i].chips > 0) {
+        if (!game->players[i].is_folded && game->players[i].chips > 0) {
             if (i < player_index) active_before++;
             else if (i > player_index) active_after++;
         }
@@ -669,7 +654,7 @@ bool ai_is_steal_situation(const GameState* game, int player_index) {
     // Check if only blinds are in
     for (int i = 0; i < game->num_players; i++) {
         if (i == player_index) continue;
-        if (!game->players[i].folded && game->players[i].current_bet > game->big_blind) {
+        if (!game->players[i].is_folded && game->players[i].bet > game->big_blind) {
             return false; // Someone already raised
         }
     }
@@ -751,7 +736,7 @@ bool ai_should_bluff(const GameState* game, const AIPersonality* personality,
     // Less likely to bluff multi-way
     int active_players = 0;
     for (int i = 0; i < game->num_players; i++) {
-        if (!game->players[i].folded && game->players[i].chips > 0) {
+        if (!game->players[i].is_folded && game->players[i].chips > 0) {
             active_players++;
         }
     }
@@ -775,7 +760,7 @@ bool ai_should_slow_play(const GameState* game, const AIPersonality* personality
     // Less likely multi-way
     int active_players = 0;
     for (int i = 0; i < game->num_players; i++) {
-        if (!game->players[i].folded && game->players[i].chips > 0) {
+        if (!game->players[i].is_folded && game->players[i].chips > 0) {
             active_players++;
         }
     }
@@ -861,8 +846,8 @@ void ai_destroy_state(AIState* state) {
     free(state);
 }
 
-// Estimate opponent range
-float ai_estimate_opponent_range(const AIState* state, int opponent) {
+// Estimate opponent range (internal use)
+static float ai_state_estimate_opponent_range(const AIState* state, int opponent) {
     if (!state || opponent < 0 || opponent >= MAX_PLAYERS) {
         return 0.5f; // Default neutral
     }
@@ -945,7 +930,7 @@ void ai_show_emotion(const AIPersonality* personality, const AIState* state,
             "So unlucky..."
         };
         *out_text = tilt_texts[rand() % 4];
-        *out_emote = "\ud83d\ude24"; // Angry face
+        *out_emote = "😤"; // Angry face
     }
     // Win emotions
     else if (state && state->hands_won > state->hands_played * 0.6f) {
@@ -956,18 +941,10 @@ void ai_show_emotion(const AIPersonality* personality, const AIState* state,
             "Can't stop winning!"
         };
         *out_text = win_texts[rand() % 4];
-        *out_emote = "\ud83d\ude04"; // Happy face
+        *out_emote = "😄"; // Happy face
     }
 }
 
-// Create random personality
-AIPersonality* ai_create_random_personality(const char* name) {
-    AIPersonality* personality = malloc(sizeof(AIPersonality));
-    if (!personality) return NULL;
-    
-    *personality = ai_personality_create_random(name);
-    return personality;
-}
 
 // Create custom personality
 AIPersonality* ai_create_custom_personality(const char* name, float* traits) {
@@ -977,7 +954,7 @@ AIPersonality* ai_create_custom_personality(const char* name, float* traits) {
     if (!personality) return NULL;
     
     strncpy(personality->name, name ? name : "Custom", sizeof(personality->name) - 1);
-    personality->type = AI_TYPE_EXPLOITATIVE;
+    personality->type = 6;  // AI_TYPE_EXPLOITATIVE
     
     // Copy trait values
     personality->aggression = traits[0];
@@ -1003,7 +980,7 @@ AIPersonality* ai_create_custom_personality(const char* name, float* traits) {
     personality->three_bet = personality->aggression * 0.15f;
     
     personality->description = "Custom personality";
-    personality->avatar = "\ud83e\udd16"; // Robot
+    personality->avatar = "🤖"; // Robot
     personality->skill_level = 5 + personality->pot_odds_accuracy * 5;
     
     return personality;

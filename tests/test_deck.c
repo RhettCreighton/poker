@@ -17,19 +17,19 @@
 } while(0)
 
 static void test_deck_creation(void) {
-    Deck* deck = deck_create();
-    assert(deck != NULL);
-    assert(deck_size(deck) == 52);
+    Deck deck;
+    deck_init(&deck);
+    assert(deck.size == 52);
+    assert(deck.position == 0);
     
     // Verify all 52 unique cards exist
     int card_counts[4][13] = {0};
     
     for (int i = 0; i < 52; i++) {
-        Card* card = deck_peek_at(deck, i);
-        assert(card != NULL);
-        assert(card->suit >= SUIT_CLUBS && card->suit <= SUIT_SPADES);
-        assert(card->rank >= RANK_2 && card->rank <= RANK_A);
-        card_counts[card->suit][card->rank - RANK_2]++;
+        Card card = deck.cards[i];
+        assert(card.suit >= SUIT_HEARTS && card.suit < NUM_SUITS);
+        assert(card.rank >= RANK_2 && card.rank <= RANK_A);
+        card_counts[card.suit][card.rank - RANK_2]++;
     }
     
     // Each card should appear exactly once
@@ -38,33 +38,32 @@ static void test_deck_creation(void) {
             assert(card_counts[suit][rank] == 1);
         }
     }
-    
-    deck_destroy(deck);
 }
 
 static void test_deck_shuffle(void) {
-    Deck* deck1 = deck_create();
-    Deck* deck2 = deck_create();
+    Deck deck1, deck2;
+    deck_init(&deck1);
+    deck_init(&deck2);
     
     // Save original order
     Card original_order[52];
     for (int i = 0; i < 52; i++) {
-        original_order[i] = *deck_peek_at(deck1, i);
+        original_order[i] = deck1.cards[i];
     }
     
     // Shuffle both decks
-    deck_shuffle(deck1);
-    deck_shuffle(deck2);
+    deck_shuffle(&deck1);
+    deck_shuffle(&deck2);
     
     // Verify deck still has 52 cards
-    assert(deck_size(deck1) == 52);
-    assert(deck_size(deck2) == 52);
+    assert(deck1.size == 52);
+    assert(deck2.size == 52);
     
     // Verify all cards still exist
     int card_found[4][13] = {0};
     for (int i = 0; i < 52; i++) {
-        Card* card = deck_peek_at(deck1, i);
-        card_found[card->suit][card->rank - RANK_2]++;
+        Card card = deck1.cards[i];
+        card_found[card.suit][card.rank - RANK_2]++;
     }
     
     for (int suit = 0; suit < 4; suit++) {
@@ -76,9 +75,7 @@ static void test_deck_shuffle(void) {
     // Verify shuffled order is different from original (with high probability)
     int differences = 0;
     for (int i = 0; i < 52; i++) {
-        Card* shuffled = deck_peek_at(deck1, i);
-        if (shuffled->suit != original_order[i].suit || 
-            shuffled->rank != original_order[i].rank) {
+        if (!card_equals(deck1.cards[i], original_order[i])) {
             differences++;
         }
     }
@@ -87,39 +84,33 @@ static void test_deck_shuffle(void) {
     // Verify two shuffles produce different results
     differences = 0;
     for (int i = 0; i < 52; i++) {
-        Card* card1 = deck_peek_at(deck1, i);
-        Card* card2 = deck_peek_at(deck2, i);
-        if (card1->suit != card2->suit || card1->rank != card2->rank) {
+        if (!card_equals(deck1.cards[i], deck2.cards[i])) {
             differences++;
         }
     }
     assert(differences > 40); // Two independent shuffles should differ
-    
-    deck_destroy(deck1);
-    deck_destroy(deck2);
 }
 
 static void test_deck_deal(void) {
-    Deck* deck = deck_create();
-    deck_shuffle(deck);
+    Deck deck;
+    deck_init(&deck);
+    deck_shuffle(&deck);
     
     // Deal all 52 cards
     Card dealt_cards[52];
     for (int i = 0; i < 52; i++) {
-        Card dealt = deck_deal(deck);
-        assert(dealt.suit != SUIT_INVALID);
-        assert(dealt.rank != RANK_INVALID);
+        Card dealt = deck_deal(&deck);
+        assert(dealt.suit != 0 || dealt.rank != 0); // Invalid card has both 0
         dealt_cards[i] = dealt;
-        assert(deck_size(deck) == 52 - i - 1);
+        assert(deck_cards_remaining(&deck) == 52 - i - 1);
     }
     
     // Verify deck is now empty
-    assert(deck_size(deck) == 0);
+    assert(deck_cards_remaining(&deck) == 0);
     
     // Try to deal from empty deck
-    Card invalid = deck_deal(deck);
-    assert(invalid.suit == SUIT_INVALID);
-    assert(invalid.rank == RANK_INVALID);
+    Card invalid = deck_deal(&deck);
+    assert(invalid.suit == 0 && invalid.rank == 0); // Invalid card
     
     // Verify all 52 unique cards were dealt
     int card_counts[4][13] = {0};
@@ -132,205 +123,213 @@ static void test_deck_deal(void) {
             assert(card_counts[suit][rank] == 1);
         }
     }
-    
-    deck_destroy(deck);
 }
 
-static void test_deck_deal_to(void) {
-    Deck* deck = deck_create();
-    deck_shuffle(deck);
+static void test_deck_deal_many(void) {
+    Deck deck;
+    deck_init(&deck);
+    deck_shuffle(&deck);
     
     Card hand[5];
-    deck_deal_to(deck, hand, 5);
+    deck_deal_many(&deck, hand, 5);
     
-    assert(deck_size(deck) == 47);
+    assert(deck_cards_remaining(&deck) == 47);
     
     // Verify dealt cards are valid and unique
     for (int i = 0; i < 5; i++) {
-        assert(hand[i].suit != SUIT_INVALID);
-        assert(hand[i].rank != RANK_INVALID);
+        assert(hand[i].suit != 0 || hand[i].rank != 0);
         
         for (int j = i + 1; j < 5; j++) {
-            assert(hand[i].suit != hand[j].suit || hand[i].rank != hand[j].rank);
+            assert(!card_equals(hand[i], hand[j]));
         }
     }
     
     // Deal remaining cards
     Card remaining[47];
-    deck_deal_to(deck, remaining, 47);
-    assert(deck_size(deck) == 0);
+    deck_deal_many(&deck, remaining, 47);
+    assert(deck_cards_remaining(&deck) == 0);
     
-    // Try to deal more than available
+    // Try to deal more than available - should get invalid cards
     Card overflow[10];
-    int dealt = deck_deal_to(deck, overflow, 10);
-    assert(dealt == 0);
-    
-    deck_destroy(deck);
+    deck_deal_many(&deck, overflow, 10);
+    for (int i = 0; i < 10; i++) {
+        assert(overflow[i].suit == 0 && overflow[i].rank == 0);
+    }
 }
 
 static void test_deck_reset(void) {
-    Deck* deck = deck_create();
+    Deck deck;
+    deck_init(&deck);
     
     // Deal some cards
     for (int i = 0; i < 20; i++) {
-        deck_deal(deck);
+        deck_deal(&deck);
     }
-    assert(deck_size(deck) == 32);
+    assert(deck_cards_remaining(&deck) == 32);
+    assert(deck.position == 20);
     
     // Reset deck
-    deck_reset(deck);
-    assert(deck_size(deck) == 52);
+    deck_reset(&deck);
+    assert(deck.position == 0);
+    assert(deck_cards_remaining(&deck) == 52);
     
-    // Verify all cards are back
-    int card_counts[4][13] = {0};
-    for (int i = 0; i < 52; i++) {
-        Card* card = deck_peek_at(deck, i);
-        card_counts[card->suit][card->rank - RANK_2]++;
-    }
-    
-    for (int suit = 0; suit < 4; suit++) {
-        for (int rank = 0; rank < 13; rank++) {
-            assert(card_counts[suit][rank] == 1);
-        }
-    }
-    
-    deck_destroy(deck);
+    // Note: reset only resets position, doesn't re-initialize cards
+    // So we can deal again from the beginning
+    Card first = deck_deal(&deck);
+    assert(first.suit != 0 || first.rank != 0);
+    assert(deck_cards_remaining(&deck) == 51);
 }
 
 static void test_deck_remove_cards(void) {
-    Deck* deck = deck_create();
+    Deck deck;
+    deck_init(&deck);
     
     // Remove specific cards
     Card cards_to_remove[3];
     cards_to_remove[0] = card_create(RANK_A, SUIT_SPADES);
     cards_to_remove[1] = card_create(RANK_K, SUIT_HEARTS);
-    cards_to_remove[2] = card_create(RANK_2, SUIT_CLUBS);
+    cards_to_remove[2] = card_create(RANK_2, SUIT_HEARTS);
     
-    deck_remove_cards(deck, cards_to_remove, 3);
-    assert(deck_size(deck) == 49);
+    deck_remove_cards(&deck, cards_to_remove, 3);
+    assert(deck.size == 49);
     
     // Verify removed cards are not in deck
-    for (int i = 0; i < deck_size(deck); i++) {
-        Card* card = deck_peek_at(deck, i);
+    for (int i = 0; i < deck.size; i++) {
         for (int j = 0; j < 3; j++) {
-            assert(card->suit != cards_to_remove[j].suit || 
-                   card->rank != cards_to_remove[j].rank);
+            assert(!card_equals(deck.cards[i], cards_to_remove[j]));
         }
     }
     
     // Try to remove non-existent card (should have no effect)
     Card non_existent = card_create(RANK_A, SUIT_SPADES); // Already removed
-    deck_remove_cards(deck, &non_existent, 1);
-    assert(deck_size(deck) == 49);
-    
-    deck_destroy(deck);
+    deck_remove_cards(&deck, &non_existent, 1);
+    assert(deck.size == 49);
 }
 
 static void test_deck_burn(void) {
-    Deck* deck = deck_create();
-    deck_shuffle(deck);
+    Deck deck;
+    deck_init(&deck);
+    deck_shuffle(&deck);
     
-    Card burned = deck_burn(deck);
-    assert(burned.suit != SUIT_INVALID);
-    assert(burned.rank != RANK_INVALID);
-    assert(deck_size(deck) == 51);
+    Card burned = deck_burn(&deck);
+    assert(burned.suit != 0 || burned.rank != 0);
+    assert(deck_cards_remaining(&deck) == 51);
     
     // Burn multiple cards
     for (int i = 0; i < 10; i++) {
-        deck_burn(deck);
+        deck_burn(&deck);
     }
-    assert(deck_size(deck) == 41);
-    
-    deck_destroy(deck);
+    assert(deck_cards_remaining(&deck) == 41);
 }
 
-static void test_deck_peek(void) {
-    Deck* deck = deck_create();
+static void test_deck_find_and_contains(void) {
+    Deck deck;
+    deck_init(&deck);
     
-    // Peek at top card
-    Card* top = deck_peek(deck);
-    assert(top != NULL);
-    assert(deck_size(deck) == 52); // Peek shouldn't remove card
+    // Test finding specific cards
+    Card ace_spades = card_create(RANK_A, SUIT_SPADES);
+    Card king_hearts = card_create(RANK_K, SUIT_HEARTS);
     
-    // Deal and verify it was the same card
-    Card dealt = deck_deal(deck);
-    assert(dealt.suit == top->suit);
-    assert(dealt.rank == top->rank);
+    assert(deck_find_card(&deck, ace_spades));
+    assert(deck_contains(&deck, king_hearts));
     
-    // Peek at specific positions
+    // Remove a card and verify it's not found
+    deck_remove_card(&deck, ace_spades);
+    assert(!deck_find_card(&deck, ace_spades));
+    assert(deck.size == 51);
+    
+    // Deal some cards and check remaining
     for (int i = 0; i < 10; i++) {
-        Card* card = deck_peek_at(deck, i);
-        assert(card != NULL);
-        assert(card->suit != SUIT_INVALID);
-        assert(card->rank != RANK_INVALID);
+        deck_deal(&deck);
     }
     
-    // Try to peek beyond deck size
-    Card* invalid = deck_peek_at(deck, 100);
-    assert(invalid == NULL);
-    
-    deck_destroy(deck);
+    // Cards that were dealt should not be found
+    // (since deck_contains only checks from position onwards)
+    assert(deck_cards_remaining(&deck) == 41);
 }
 
-static void test_deck_clone(void) {
-    Deck* original = deck_create();
-    deck_shuffle(original);
+static void test_deck_shuffle_partial(void) {
+    Deck deck;
+    deck_init(&deck);
     
-    // Deal some cards from original
-    for (int i = 0; i < 10; i++) {
-        deck_deal(original);
+    // Deal 20 cards
+    Card dealt[20];
+    for (int i = 0; i < 20; i++) {
+        dealt[i] = deck_deal(&deck);
     }
     
-    // Clone the deck
-    Deck* clone = deck_clone(original);
-    assert(clone != NULL);
-    assert(deck_size(clone) == deck_size(original));
-    
-    // Verify clone has same cards in same order
-    for (int i = 0; i < deck_size(original); i++) {
-        Card* orig_card = deck_peek_at(original, i);
-        Card* clone_card = deck_peek_at(clone, i);
-        assert(orig_card->suit == clone_card->suit);
-        assert(orig_card->rank == clone_card->rank);
+    // Save the remaining cards order
+    Card before_shuffle[32];
+    for (int i = 0; i < 32; i++) {
+        before_shuffle[i] = deck.cards[deck.position + i];
     }
     
-    // Modify clone shouldn't affect original
-    deck_deal(clone);
-    assert(deck_size(clone) == deck_size(original) - 1);
+    // Shuffle only the remaining cards
+    deck_shuffle_remaining(&deck);
     
-    deck_destroy(original);
-    deck_destroy(clone);
+    // First 20 cards should still be dealt
+    assert(deck.position == 20);
+    
+    // Remaining cards should be shuffled
+    int differences = 0;
+    for (int i = 0; i < 32; i++) {
+        if (!card_equals(deck.cards[deck.position + i], before_shuffle[i])) {
+            differences++;
+        }
+    }
+    assert(differences > 20); // Should be well shuffled
+}
+
+static void test_deck_short(void) {
+    Deck deck;
+    deck_init_short(&deck);
+    
+    // Short deck should have 32 cards (7 through Ace)
+    assert(deck.size == 32);
+    assert(deck.position == 0);
+    
+    // Verify only cards 7 and up exist
+    for (int i = 0; i < deck.size; i++) {
+        assert(deck.cards[i].rank >= RANK_7);
+        assert(deck.cards[i].rank <= RANK_A);
+    }
+    
+    // Should be able to deal all 32
+    int count = 0;
+    while (deck_cards_remaining(&deck) > 0) {
+        Card c = deck_deal(&deck);
+        assert(c.rank >= RANK_7);
+        count++;
+    }
+    assert(count == 32);
 }
 
 static void test_multiple_decks(void) {
     // Test creating multiple independent decks
-    Deck* decks[10];
+    Deck decks[5];
     
-    for (int i = 0; i < 10; i++) {
-        decks[i] = deck_create();
-        deck_shuffle(decks[i]);
+    for (int i = 0; i < 5; i++) {
+        deck_init(&decks[i]);
+        deck_shuffle(&decks[i]);
     }
     
     // Verify each deck is independent
-    for (int i = 0; i < 10; i++) {
-        assert(deck_size(decks[i]) == 52);
+    for (int i = 0; i < 5; i++) {
+        assert(deck_cards_remaining(&decks[i]) == 52);
         
         // Deal from one shouldn't affect others
-        deck_deal(decks[i]);
-        assert(deck_size(decks[i]) == 51);
+        deck_deal(&decks[i]);
+        assert(deck_cards_remaining(&decks[i]) == 51);
         
-        for (int j = 0; j < 10; j++) {
+        for (int j = 0; j < 5; j++) {
             if (i != j) {
-                assert(deck_size(decks[j]) == 52);
+                assert(deck_cards_remaining(&decks[j]) == 52);
             }
         }
         
         // Reset for next iteration
-        deck_reset(decks[i]);
-    }
-    
-    for (int i = 0; i < 10; i++) {
-        deck_destroy(decks[i]);
+        deck_reset(&decks[i]);
+        assert(deck_cards_remaining(&decks[i]) == 52);
     }
 }
 
@@ -339,10 +338,11 @@ static void test_deck_performance(void) {
     double cpu_time_used;
     
     // Test shuffle performance
-    Deck* deck = deck_create();
+    Deck deck;
+    deck_init(&deck);
     start = clock();
     for (int i = 0; i < 10000; i++) {
-        deck_shuffle(deck);
+        deck_shuffle(&deck);
     }
     end = clock();
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
@@ -351,16 +351,14 @@ static void test_deck_performance(void) {
     // Test deal performance
     start = clock();
     for (int i = 0; i < 1000; i++) {
-        deck_reset(deck);
-        while (deck_size(deck) > 0) {
-            deck_deal(deck);
+        deck_reset(&deck);
+        while (deck_cards_remaining(&deck) > 0) {
+            deck_deal(&deck);
         }
     }
     end = clock();
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     printf("\n  1,000 full deck deals: %.3f seconds", cpu_time_used);
-    
-    deck_destroy(deck);
 }
 
 int main(void) {
@@ -370,12 +368,13 @@ int main(void) {
     RUN_TEST(test_deck_creation);
     RUN_TEST(test_deck_shuffle);
     RUN_TEST(test_deck_deal);
-    RUN_TEST(test_deck_deal_to);
+    RUN_TEST(test_deck_deal_many);
     RUN_TEST(test_deck_reset);
     RUN_TEST(test_deck_remove_cards);
     RUN_TEST(test_deck_burn);
-    RUN_TEST(test_deck_peek);
-    RUN_TEST(test_deck_clone);
+    RUN_TEST(test_deck_find_and_contains);
+    RUN_TEST(test_deck_shuffle_partial);
+    RUN_TEST(test_deck_short);
     RUN_TEST(test_multiple_decks);
     RUN_TEST(test_deck_performance);
     

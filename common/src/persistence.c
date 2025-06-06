@@ -93,7 +93,7 @@ PokerError save_game_state(const GameState* game, const char* filename,
     
     LOG_INFO("persistence", "Saving game state to %s", filename);
     
-    FILE* file = fopen(filename, "wb");
+    FILE* file = fopen(filename, "wb+");
     if (!file) {
         POKER_RETURN_ERROR(POKER_ERROR_FILE_IO, "Failed to open file for writing");
     }
@@ -151,9 +151,18 @@ PokerError save_game_state(const GameState* game, const char* filename,
     }
     
     // Write deck state
-    if (fwrite(game->deck, sizeof(Deck), 1, file) != 1) {
-        fclose(file);
-        POKER_RETURN_ERROR(POKER_ERROR_FILE_IO, "Failed to write deck data");
+    if (game->deck) {
+        if (fwrite(game->deck, sizeof(Deck), 1, file) != 1) {
+            fclose(file);
+            POKER_RETURN_ERROR(POKER_ERROR_FILE_IO, "Failed to write deck data");
+        }
+    } else {
+        // Write a dummy deck to maintain file format consistency
+        Deck dummy_deck = {0};
+        if (fwrite(&dummy_deck, sizeof(Deck), 1, file) != 1) {
+            fclose(file);
+            POKER_RETURN_ERROR(POKER_ERROR_FILE_IO, "Failed to write deck data");
+        }
     }
     
     // Write community cards
@@ -248,12 +257,28 @@ PokerError load_game_state(GameState** game, const char* filename) {
     memcpy(&max_players, ptr, sizeof(max_players));
     ptr += sizeof(max_players);
     
-    // Create game state
-    *game = game_state_create(NULL, max_players);  // Variant will need to be set separately
+    // Create game state manually since we don't have a variant yet
+    *game = calloc(1, sizeof(GameState));
     if (!*game) {
         free(data_buffer);
         fclose(file);
-        POKER_RETURN_ERROR(POKER_ERROR_OUT_OF_MEMORY, "Failed to create game state");
+        POKER_RETURN_ERROR(POKER_ERROR_OUT_OF_MEMORY, "Failed to allocate game state");
+    }
+    
+    (*game)->max_players = max_players;
+    (*game)->players = calloc(max_players, sizeof(Player));
+    if (!(*game)->players) {
+        free(*game);
+        *game = NULL;
+        free(data_buffer);
+        fclose(file);
+        POKER_RETURN_ERROR(POKER_ERROR_OUT_OF_MEMORY, "Failed to allocate players");
+    }
+    
+    // Initialize players
+    for (int i = 0; i < max_players; i++) {
+        player_init(&(*game)->players[i]);
+        (*game)->players[i].seat_number = i;
     }
     
     // Read remaining game data
@@ -292,7 +317,16 @@ PokerError load_game_state(GameState** game, const char* filename) {
         ptr += sizeof(player->stats);
     }
     
-    // Read deck
+    // Allocate and read deck
+    (*game)->deck = malloc(sizeof(Deck));
+    if (!(*game)->deck) {
+        free((*game)->players);
+        free(*game);
+        *game = NULL;
+        free(data_buffer);
+        fclose(file);
+        POKER_RETURN_ERROR(POKER_ERROR_OUT_OF_MEMORY, "Failed to allocate deck");
+    }
     memcpy((*game)->deck, ptr, sizeof(Deck));
     ptr += sizeof(Deck);
     
@@ -449,7 +483,7 @@ PokerError save_player_stats(const PersistentPlayerStats* stats,
     
     LOG_INFO("persistence", "Saving %u player stats to %s", num_players, filename);
     
-    FILE* file = fopen(filename, "wb");
+    FILE* file = fopen(filename, "wb+");
     if (!file) {
         POKER_RETURN_ERROR(POKER_ERROR_FILE_IO, "Failed to open file for writing");
     }

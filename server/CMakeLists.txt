@@ -39,6 +39,7 @@ endif()
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/p2p_simulation_main.c")
     add_executable(p2p_simulation src/p2p_simulation_main.c)
     target_link_libraries(p2p_simulation PRIVATE
+        poker_server
         poker_network
         poker_ai
         poker_common
